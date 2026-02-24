@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+body {
+  font-family: "Inter", sans-serif;
+}
+
+.glass-nav {
+  background: rgba(246, 246, 248, 0.8);
+  backdrop-filter: blur(12px);
+}
+
+.hero-gradient {
+  background: radial-gradient(circle at 50% 50%, rgba(67, 70, 239, 0.08) 0%, rgba(246, 246, 248, 0) 70%);
+}
+
+.blob {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(135deg, rgba(67,70,239,0.1) 0%, rgba(168,85,247,0.1) 100%);
+  filter: blur(80px);
+  border-radius: 50%;
+}
