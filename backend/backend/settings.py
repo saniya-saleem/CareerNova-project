@@ -37,24 +37,46 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # ⭐ REQUIRED for django-allauth
+    'django.contrib.sites',
+
+    # ⭐ your apps
     'authentication',
     'profiles',
     'resume',
     'interview',
     'chat',
     'analytics',
+
+    # ⭐ DRF
     'rest_framework',
+    'rest_framework.authtoken',
+
+    # ⭐ ALLAUTH
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+
+    # ⭐ REST AUTH
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
     
+    "corsheaders",
 ]
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -143,4 +165,15 @@ from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5174",
+]
+
+GOOGLE_CLIENT_ID = "305277912726-1hlcnf0pfhqbtdgl3jihkk4ufdn2uodq.apps.googleusercontent.com"
