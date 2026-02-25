@@ -1,54 +1,40 @@
-// import { useState } from "react";
-// import { loginUser } from "../api/auth";
-// import GoogleLoginBtn from "../components/GoogleLoginBtn";
+// import { GoogleLogin } from "@react-oauth/google";
+// import { useNavigate } from "react-router-dom";
+// import axios from "axios";
 
-// export default function Login() {
-//   const [form, setForm] = useState({
-//     email: "",
-//     password: "",
-//   });
+// export default function GoogleLoginBtn() {
+//   const navigate = useNavigate();
 
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
+//   const handleSuccess = async (credentialResponse) => {
+//     try {
+//       const res = await axios.post(
+//         "http://127.0.0.1:8000/api/auth/google/",
+//         {
+//           access_token: credentialResponse.credential, // ✅ keep same
+//         }
+//       );
 
-//     const data = await loginUser(form);
+//       console.log(res.data);
 
-//     console.log(data);
+//       localStorage.setItem("access", res.data.access);
+//       localStorage.setItem("refresh", res.data.refresh);
 
-//     if (data.access) {
-//       localStorage.setItem("access", data.access);
-//       alert("Login success");
-//     } else {
+//       // ✅ redirect only
+//       navigate("/");
+
+//     } catch (err) {
+//       console.log(err);
 //       alert("Login failed");
 //     }
 //   };
 
 //   return (
-//     <div className="flex items-center justify-center h-screen">
-//       <form onSubmit={handleSubmit} className="space-y-4 w-80">
-//         <input
-//           placeholder="Email"
-//           className="border p-2 w-full"
-//           onChange={(e) => setForm({ ...form, email: e.target.value })}
-//         />
-//         <input
-//           placeholder="Password"
-//           type="password"
-//           className="border p-2 w-full"
-//           onChange={(e) => setForm({ ...form, password: e.target.value })}
-//         />
-
-//         <button className="bg-indigo-600 text-white p-2 w-full">
-//           Login
-//         </button>
-
-//         <GoogleLoginBtn />
-//       </form>
-       
-//     </div>
+//     <GoogleLogin
+//       onSuccess={handleSuccess}
+//       onError={() => alert("Google login failed")}
+//     />
 //   );
 // }
-
 
 import { useState } from "react";
 import { loginUser } from "../api/auth";
