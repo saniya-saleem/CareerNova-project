@@ -1,62 +1,3 @@
-// import { useState } from "react";
-// import { registerUser } from "../api/auth";
-// import { useNavigate } from "react-router-dom";
-
-// export default function Register() {
-//   const navigate = useNavigate();
-
-//   const [form, setForm] = useState({
-//     email: "",
-//     password: "",
-//     name: "",
-//   });
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-
-//     const data = await registerUser(form);
-
-//     console.log(data);
-
-//     if (!data.error) {
-//       alert("Registered successfully");
-//       navigate("/login");
-//     } else {
-//       alert("Register failed");
-//     }
-//   };
-
-//   return (
-//     <div className="flex items-center justify-center h-screen">
-//       <form onSubmit={handleSubmit} className="space-y-4 w-80">
-//         <input
-//           placeholder="Name"
-//           className="border p-2 w-full"
-//           onChange={(e) => setForm({ ...form, name: e.target.value })}
-//         />
-
-//         <input
-//           placeholder="Email"
-//           className="border p-2 w-full"
-//           onChange={(e) => setForm({ ...form, email: e.target.value })}
-//         />
-
-//         <input
-//           placeholder="Password"
-//           type="password"
-//           className="border p-2 w-full"
-//           onChange={(e) => setForm({ ...form, password: e.target.value })}
-//         />
-
-//         <button className="bg-indigo-600 text-white p-2 w-full">
-//           Register
-//         </button>
-//       </form>
-//     </div>
-//   );
-// }
-
-
 import { useState } from "react";
 import { registerUser } from "../api/auth";
 import { useNavigate } from "react-router-dom";
@@ -73,43 +14,86 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+  try {
     const data = await registerUser(form);
-    console.log(data);
 
-    if (data.message) {
-      alert("Registration success");
-      navigate("/login");
-    } else {
-      alert(JSON.stringify(data));
-    }
-  };
+    // ⭐ UPDATED message (email now sent)
+    alert("Registered successfully 🎉 Check your email inbox");
+
+    navigate("/login");
+
+  } catch (err) {
+    console.log(err);
+
+    // ⭐ better error message
+    alert(
+      err?.email?.[0] ||
+      err?.username?.[0] ||
+      "Register failed"
+    );
+  }
+};
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form onSubmit={handleSubmit} className="space-y-4 w-80">
-        
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-200">
+
+      {/* ⭐ Card */}
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-lg rounded-2xl p-8 w-96 space-y-5"
+      >
+        {/* ⭐ Title */}
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800">Create Account</h2>
+          <p className="text-gray-500 text-sm">Join CareerNova today</p>
+        </div>
+
+        {/* ⭐ Username */}
         <input
           placeholder="Username"
-          className="border p-2 w-full"
-          onChange={(e) => setForm({ ...form, username: e.target.value })}
+          className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          value={form.username}
+          onChange={(e) =>
+            setForm({ ...form, username: e.target.value })
+          }
         />
 
+        {/* ⭐ Email */}
         <input
           placeholder="Email"
-          className="border p-2 w-full"
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          value={form.email}
+          onChange={(e) =>
+            setForm({ ...form, email: e.target.value })
+          }
         />
 
+        {/* ⭐ Password */}
         <input
-          type="password"
           placeholder="Password"
-          className="border p-2 w-full"
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          type="password"
+          className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          value={form.password}
+          onChange={(e) =>
+            setForm({ ...form, password: e.target.value })
+          }
         />
 
-        <button className="bg-indigo-600 text-white p-2 w-full">
+        {/* ⭐ Button */}
+        <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-3 w-full rounded-lg font-semibold transition">
           Register
         </button>
+
+        {/* ⭐ Login redirect */}
+        <p className="text-center text-sm text-gray-500">
+          Already have an account?{" "}
+          <span
+            className="text-indigo-600 cursor-pointer font-semibold"
+            onClick={() => navigate("/login")}
+          >
+            Login
+          </span>
+        </p>
       </form>
     </div>
   );

@@ -104,10 +104,15 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'careernova_db',
+        'USER': 'postgres',
+        'PASSWORD': 'saniya123',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
+
 
 
 # Password validation
@@ -173,7 +178,14 @@ SIMPLE_JWT = {
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5174",
+    "http://localhost:5173",
 ]
 
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 GOOGLE_CLIENT_ID = "305277912726-1hlcnf0pfhqbtdgl3jihkk4ufdn2uodq.apps.googleusercontent.com"
+EMAIL_HOST_USER = "contactcareernova@gmail.com"
+EMAIL_HOST_PASSWORD = "nvvn qstx kzmf xgis"
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
