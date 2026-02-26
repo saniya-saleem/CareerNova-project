@@ -1,17 +1,25 @@
-from django.shortcuts import render
-from rest_framework import generics
-from .models import User
-from .serializers import RegisterSerializer
-from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
-from dj_rest_auth.registration.views import SocialLoginView
-
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from .serializers import RegisterSerializer, LoginSerializer
+
+# ⭐ EMAIL
+from django.core.mail import send_mail
+from django.conf import settings
+
+# Google imports
+from google.oauth2 import id_token
+from google.auth.transport import requests
+
+User = get_user_model()
 
 
+# =========================
+# ⭐ REGISTER VIEW
+# =========================
 class RegisterView(APIView):
 
     def post(self, request):
@@ -19,53 +27,50 @@ class RegisterView(APIView):
 
         if serializer.is_valid():
             user = serializer.save()
-            return Response(
-                {"message": "User registered successfully"},
-                status=status.HTTP_201_CREATED
-            )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    from django.contrib.auth import authenticate
-from .serializers import LoginSerializer
+            # ⭐ SEND WELCOME EMAIL
+            try:
+                send_mail(
+                    "Welcome to CareerNova 🎉",
+                    f"Hi {user.username},\n\nYour CareerNova account was created successfully.\n\nHappy learning 🚀",
+                    settings.EMAIL_HOST_USER,
+                    [user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print("Email error:", e)
+
+            return Response({"message": "User registered successfully"}, status=201)
+
+        return Response(serializer.errors, status=400)
 
 
+# =========================
+# ⭐ LOGIN VIEW
+# =========================
 class LoginView(APIView):
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
 
         if serializer.is_valid():
-            email = serializer.validated_data["email"]
-            password = serializer.validated_data["password"]
+            user = serializer.validated_data["user"]
 
-            user = authenticate(email=email, password=password)
+            # 🔥 generate JWT
+            refresh = RefreshToken.for_user(user)
 
-            if user:
-                return Response({"message": "Login success"})
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "message": "Login success"
+            })
 
-            return Response(
-                {"error": "Invalid credentials"},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response(serializer.errors, status=400)
 
 
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from google.oauth2 import id_token
-from google.auth.transport import requests
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import RefreshToken
-
-User = get_user_model()
-
-
+# =========================
+# ⭐ GOOGLE LOGIN
+# =========================
 class GoogleLogin(APIView):
 
     def post(self, request):
@@ -75,7 +80,6 @@ class GoogleLogin(APIView):
             return Response({"error": "No token"}, status=400)
 
         try:
-            # Verify Google token
             idinfo = id_token.verify_oauth2_token(
                 token,
                 requests.Request(),
@@ -85,16 +89,24 @@ class GoogleLogin(APIView):
             email = idinfo.get("email")
             name = idinfo.get("name")
 
-            if not email:
-                return Response({"error": "Email not found"}, status=400)
-
-            # Create user if not exists
             user, created = User.objects.get_or_create(
                 email=email,
                 defaults={"username": email.split("@")[0]}
             )
 
-            # Generate JWT
+            # ⭐ OPTIONAL: send email only for new users
+            if created:
+                try:
+                    send_mail(
+                        "Welcome to CareerNova 🎉",
+                        f"Hi {name},\n\nYour CareerNova account was created via Google login.",
+                        settings.EMAIL_HOST_USER,
+                        [email],
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    print("Email error:", e)
+
             refresh = RefreshToken.for_user(user)
 
             return Response({
