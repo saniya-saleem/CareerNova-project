@@ -6,20 +6,18 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, LoginSerializer
 
-# ⭐ EMAIL
+
 from django.core.mail import send_mail
 from django.conf import settings
 
-# Google imports
+
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
 User = get_user_model()
 
 
-# =========================
-# ⭐ REGISTER VIEW
-# =========================
+
 class RegisterView(APIView):
 
     def post(self, request):
@@ -28,11 +26,11 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            # ⭐ SEND WELCOME EMAIL
+            
             try:
                 send_mail(
-                    "Welcome to CareerNova 🎉",
-                    f"Hi {user.username},\n\nYour CareerNova account was created successfully.\n\nHappy learning 🚀",
+                    "Welcome to CareerNova ",
+                    f"Hi {user.username},\n\nYour CareerNova account was created successfully.\n\nHappy learning ",
                     settings.EMAIL_HOST_USER,
                     [user.email],
                     fail_silently=False,
@@ -45,9 +43,7 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=400)
 
 
-# =========================
-# ⭐ LOGIN VIEW
-# =========================
+
 class LoginView(APIView):
 
     def post(self, request):
@@ -56,7 +52,7 @@ class LoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
 
-            # 🔥 generate JWT
+            #  generate JWT
             refresh = RefreshToken.for_user(user)
 
             return Response({
@@ -68,9 +64,6 @@ class LoginView(APIView):
         return Response(serializer.errors, status=400)
 
 
-# =========================
-# ⭐ GOOGLE LOGIN
-# =========================
 class GoogleLogin(APIView):
 
     def post(self, request):
@@ -94,11 +87,11 @@ class GoogleLogin(APIView):
                 defaults={"username": email.split("@")[0]}
             )
 
-            # ⭐ OPTIONAL: send email only for new users
+            #  send email only for new users
             if created:
                 try:
                     send_mail(
-                        "Welcome to CareerNova 🎉",
+                        "Welcome to CareerNova ",
                         f"Hi {name},\n\nYour CareerNova account was created via Google login.",
                         settings.EMAIL_HOST_USER,
                         [email],

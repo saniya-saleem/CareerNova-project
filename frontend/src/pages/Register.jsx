@@ -17,15 +17,15 @@ export default function Register() {
   try {
     const data = await registerUser(form);
 
-    // ⭐ UPDATED message (email now sent)
-    alert("Registered successfully 🎉 Check your email inbox");
+   
+    alert("Registered successfully  Check your email inbox");
 
     navigate("/login");
 
   } catch (err) {
     console.log(err);
 
-    // ⭐ better error message
+    //  error message
     alert(
       err?.email?.[0] ||
       err?.username?.[0] ||
@@ -37,18 +37,18 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-200">
 
-      {/* ⭐ Card */}
+      
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow-lg rounded-2xl p-8 w-96 space-y-5"
       >
-        {/* ⭐ Title */}
+        
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800">Create Account</h2>
           <p className="text-gray-500 text-sm">Join CareerNova today</p>
         </div>
 
-        {/* ⭐ Username */}
+        
         <input
           placeholder="Username"
           className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -58,7 +58,7 @@ export default function Register() {
           }
         />
 
-        {/* ⭐ Email */}
+        
         <input
           placeholder="Email"
           className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -68,7 +68,7 @@ export default function Register() {
           }
         />
 
-        {/* ⭐ Password */}
+        
         <input
           placeholder="Password"
           type="password"
@@ -79,12 +79,12 @@ export default function Register() {
           }
         />
 
-        {/* ⭐ Button */}
+        
         <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-3 w-full rounded-lg font-semibold transition">
           Register
         </button>
 
-        {/* ⭐ Login redirect */}
+        
         <p className="text-center text-sm text-gray-500">
           Already have an account?{" "}
           <span
