@@ -25,7 +25,7 @@ export default function Register() {
   } catch (err) {
     console.log(err);
 
-    //  error message
+    
     alert(
       err?.email?.[0] ||
       err?.username?.[0] ||

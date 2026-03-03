@@ -38,10 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # ⭐ REQUIRED for django-allauth
+    
     'django.contrib.sites',
 
-    # ⭐ your apps
+    
     'authentication',
     'profiles',
     'resume',
@@ -49,17 +49,17 @@ INSTALLED_APPS = [
     'chat',
     'analytics',
 
-    # ⭐ DRF
+    
     'rest_framework',
     'rest_framework.authtoken',
 
-    # ⭐ ALLAUTH
+    
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
 
-    # ⭐ REST AUTH
+   
     'dj_rest_auth',
     'dj_rest_auth.registration',
     
@@ -159,11 +159,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'authentication.User'
 
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-}
 
 from datetime import timedelta
 
@@ -189,3 +184,24 @@ GOOGLE_CLIENT_ID = "305277912726-1hlcnf0pfhqbtdgl3jihkk4ufdn2uodq.apps.googleuse
 EMAIL_HOST_USER = "contactcareernova@gmail.com"
 EMAIL_HOST_PASSWORD = "nvvn qstx kzmf xgis"
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+import os
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+
+    # ✅ Add this
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '10/day',   # You can change this if needed
+    },
+}

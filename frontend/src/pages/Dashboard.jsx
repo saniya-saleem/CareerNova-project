@@ -2,10 +2,10 @@ export default function Dashboard() {
   return (
     <div className="p-10 bg-gray-50 min-h-screen">
 
-      {/* header */}
+      
       <h1 className="text-3xl font-bold mb-6">Welcome back 👋</h1>
 
-      {/* stats */}
+      
       <div className="grid grid-cols-3 gap-6 mb-10">
         <div className="bg-white p-6 rounded-xl shadow">
           <p className="text-gray-500">Resumes analyzed</p>
