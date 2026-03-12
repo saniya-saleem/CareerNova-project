@@ -1,0 +1,14 @@
+Status: 401
+Date: Wed, 11 Mar 2026 04:41:40 GMT
+Server: WSGIServer/0.2 CPython/3.13.7
+Content-Type: application/json
+WWW-Authenticate: Bearer realm="api"
+Vary: Accept, origin
+Allow: POST, OPTIONS
+X-Frame-Options: DENY
+Content-Length: 58
+access-control-allow-origin: http://localhost:5174
+access-control-allow-credentials: true
+X-Content-Type-Options: nosniff
+Referrer-Policy: same-origin
+Cross-Origin-Opener-Policy: same-origin

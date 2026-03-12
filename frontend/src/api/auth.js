@@ -1,10 +1,13 @@
-const BASE_URL = "http://127.0.0.1:8000/api/auth";
+const BASE_URL = "http://localhost:8000/api/auth";
 
-
+// Register
 export const registerUser = async (data) => {
   const res = await fetch(`${BASE_URL}/register/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",   // ⭐ allow cookies
     body: JSON.stringify(data),
   });
 
@@ -18,11 +21,14 @@ export const registerUser = async (data) => {
 };
 
 
-
+// Login
 export const loginUser = async (data) => {
   const res = await fetch(`${BASE_URL}/login/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",   // ⭐ VERY IMPORTANT (stores cookie)
     body: JSON.stringify(data),
   });
 
@@ -31,6 +37,9 @@ export const loginUser = async (data) => {
   if (!res.ok) {
     throw responseData;
   }
+
+  // ❌ Do NOT store tokens in localStorage
+  // Django already saved them in cookies
 
   return responseData;
 };

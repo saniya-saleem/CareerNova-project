@@ -4,6 +4,8 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
+import ResumeUpload from "../pages/ResumeUpload";
+import MockInterview from "../pages/MockInterview";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -16,6 +18,8 @@ export default function AppRoutes() {
         ? <Profile /> 
         : <Login />
     } />
+    <Route path="/resume-upload" element={<ResumeUpload/>}/>
+    <Route path="/mock-interview" element={<MockInterview/>}/>
     </Routes>
   );
 }

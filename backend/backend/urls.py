@@ -30,6 +30,10 @@ urlpatterns = [
 
     # Allauth (if you are using it)
     path("accounts/", include("allauth.urls")),
+    
+    path("api/resume/", include("resumes.urls")),
+    
+    path("api/interview/", include("interview.urls")),
 ]
 
 # Serve media files during development

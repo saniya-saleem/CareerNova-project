@@ -8,10 +8,11 @@ export default function GoogleLoginBtn() {
   const handleSuccess = async (credentialResponse) => {
     try {
       const res = await axios.post(
-        "http://127.0.0.1:8000/api/auth/google/",
+        "http://localhost:8000/api/auth/google/",
         {
           access_token: credentialResponse.credential, 
-        }
+        },
+        { withCredentials: true }
       );
 
       console.log(res.data);

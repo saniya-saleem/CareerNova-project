@@ -1,24 +1,45 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import RefreshToken
-
-from .serializers import RegisterSerializer, LoginSerializer
-
-
+import threading
 from django.core.mail import send_mail
 from django.conf import settings
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
+from .serializers import RegisterSerializer, LoginSerializer
+
 User = get_user_model()
 
 
+# -------------------------
+# Async Email Function
+# -------------------------
+def send_welcome_email(email, username):
+    try:
+        send_mail(
+            "Welcome to CareerNova",
+            f"Hi {username},\n\nYour CareerNova account was created successfully.\n\nHappy learning!",
+            settings.EMAIL_HOST_USER,
+            [email],
+            fail_silently=True,
+        )
+    except Exception as e:
+        print("Email error:", e)
 
+
+# -------------------------
+# Register View
+# -------------------------
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -26,53 +47,107 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            
-            try:
-                send_mail(
-                    "Welcome to CareerNova ",
-                    f"Hi {user.username},\n\nYour CareerNova account was created successfully.\n\nHappy learning ",
-                    settings.EMAIL_HOST_USER,
-                    [user.email],
-                    fail_silently=False,
-                )
-            except Exception as e:
-                print("Email error:", e)
+            # ✅ Send email in background thread
+            threading.Thread(
+                target=send_welcome_email,
+                args=(user.email, user.username)
+            ).start()
 
-            return Response({"message": "User registered successfully"}, status=201)
+            refresh = RefreshToken.for_user(user)
 
-        return Response(serializer.errors, status=400)
+            response = Response(
+                {
+                    "message": "User registered successfully",
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                    }
+                },
+                status=status.HTTP_201_CREATED
+            )
+
+            response.set_cookie(
+                key="access",
+                value=str(refresh.access_token),
+                httponly=True,
+                secure=False,
+                samesite="Lax"
+            )
+
+            response.set_cookie(
+                key="refresh",
+                value=str(refresh),
+                httponly=True,
+                secure=False,
+                samesite="Lax"
+            )
+
+            return response
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
+# -------------------------
+# Login View
+# -------------------------
 class LoginView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
 
         if serializer.is_valid():
+
             user = serializer.validated_data["user"]
 
-            
             refresh = RefreshToken.for_user(user)
 
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "message": "Login success"
+            response = Response({
+                "message": "Login successful",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                }
             })
 
-        return Response(serializer.errors, status=400)
+            response.set_cookie(
+                key="access",
+                value=str(refresh.access_token),
+                httponly=True,
+                secure=False,
+                samesite="Lax"
+            )
+
+            response.set_cookie(
+                key="refresh",
+                value=str(refresh),
+                httponly=True,
+                secure=False,
+                samesite="Lax"
+            )
+
+            return response
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# -------------------------
+# Google Login
+# -------------------------
 class GoogleLogin(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
+
         token = request.data.get("access_token")
 
         if not token:
             return Response({"error": "No token"}, status=400)
 
         try:
+
             idinfo = id_token.verify_oauth2_token(
                 token,
                 requests.Request(),
@@ -87,27 +162,105 @@ class GoogleLogin(APIView):
                 defaults={"username": email.split("@")[0]}
             )
 
-            #  send email only for new users
             if created:
-                try:
-                    send_mail(
-                        "Welcome to CareerNova ",
-                        f"Hi {name},\n\nYour CareerNova account was created via Google login.",
-                        settings.EMAIL_HOST_USER,
-                        [email],
-                        fail_silently=True,
-                    )
-                except Exception as e:
-                    print("Email error:", e)
+                threading.Thread(
+                    target=send_welcome_email,
+                    args=(email, name)
+                ).start()
 
             refresh = RefreshToken.for_user(user)
 
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
+            response = Response({
                 "email": email,
-                "name": name
+                "name": name,
+                "message": "Google login successful"
             })
+
+            response.set_cookie(
+                key="access",
+                value=str(refresh.access_token),
+                httponly=True,
+                secure=False,
+                samesite="Lax"
+            )
+
+            response.set_cookie(
+                key="refresh",
+                value=str(refresh),
+                httponly=True,
+                secure=False,
+                samesite="Lax"
+            )
+
+            return response
 
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+
+
+# -------------------------
+# Refresh Token
+# -------------------------
+class RefreshTokenView(TokenRefreshView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+
+        refresh_token = request.COOKIES.get("refresh")
+
+        if refresh_token:
+            request.data._mutable = True
+            request.data["refresh"] = refresh_token
+            request.data._mutable = False
+
+        response = super().post(request, *args, **kwargs)
+
+        if response.status_code == 200:
+            access_token = response.data.get("access")
+
+            response.set_cookie(
+                key="access",
+                value=access_token,
+                httponly=True,
+                secure=False,
+                samesite="Lax"
+            )
+
+        return response
+
+
+# -------------------------
+# Logout
+# -------------------------
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        response = Response(
+            {"message": "Logout successful"},
+            status=status.HTTP_200_OK
+        )
+
+        response.delete_cookie("access")
+        response.delete_cookie("refresh")
+        response.delete_cookie("csrftoken")
+
+        return response
+
+
+# -------------------------
+# User Info
+# -------------------------
+class UserInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        user = request.user
+
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
+        })
