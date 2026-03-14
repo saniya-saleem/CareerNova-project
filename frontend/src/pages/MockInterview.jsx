@@ -41,17 +41,39 @@ export default function MockInterview() {
     setAnswers((prev) => ({ ...prev, [index]: value }));
   };
 
-  const submitAnswers = () => {
-    const answeredCount = Object.keys(answers).filter(k => answers[k]?.trim()).length;
-    if (answeredCount < questions.length) {
-      toast.error("Please answer all questions!");
-      return;
-    }
-    const score = Math.floor(Math.random() * 30) + 70;
-    console.log("Submitted Answers:", answers);
-    toast.success(`Interview submitted! Score: ${score}/100`);
-  };
+const submitAnswers = async () => {
+  const answeredCount = Object.keys(answers).filter(k => answers[k]?.trim()).length;
 
+  if (answeredCount < questions.length) {
+    toast.error("Please answer all questions!");
+    return;
+  }
+
+  try {
+    const formattedAnswers = questions.map((q, index) => ({
+      question: q,
+      answer: answers[index]
+    }));
+
+    const response = await axios.post(
+      "http://localhost:8000/api/interview/evaluate/",
+      { answers: formattedAnswers },
+      { withCredentials: true }
+    );
+
+    const result = response.data;
+
+    toast.success(`Interview Score: ${result.score ?? 0}/100`);
+
+    console.log("Strengths:", result.strengths);
+    console.log("Weaknesses:", result.weaknesses);
+    console.log("Suggestions:", result.suggestions);
+
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to evaluate interview.");
+  }
+};
   const roles = [
     { value: "Frontend Developer", icon: "🎨" },
     { value: "Backend Developer", icon: "⚙️" },
@@ -68,7 +90,7 @@ export default function MockInterview() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/40 py-12 px-4">
       <div className="max-w-3xl mx-auto">
 
-        {/* Header */}
+ 
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
@@ -82,13 +104,12 @@ export default function MockInterview() {
           </p>
         </div>
 
-        {/* Role Selection Card */}
+ 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">
             Select Your Role
           </h2>
 
-          {/* Role Pills */}
           <div className="flex flex-wrap gap-2 mb-5">
             {roles.map((r) => (
               <button
@@ -106,7 +127,7 @@ export default function MockInterview() {
             ))}
           </div>
 
-          {/* Start Button */}
+
           <button
             onClick={startInterview}
             disabled={loading || !role}
@@ -131,7 +152,6 @@ export default function MockInterview() {
           </button>
         </div>
 
-        {/* Error */}
         {errorMSG && (
           <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
             <svg className="w-4 h-4 fill-red-500 flex-shrink-0" viewBox="0 0 24 24">
@@ -141,11 +161,11 @@ export default function MockInterview() {
           </div>
         )}
 
-        {/* Questions */}
+
         {questions.length > 0 && (
           <div className="flex flex-col gap-4">
 
-            {/* Progress Bar */}
+
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1">
                 <span className="text-sm font-semibold text-gray-700">
@@ -163,7 +183,7 @@ export default function MockInterview() {
               </span>
             </div>
 
-            {/* Question Cards */}
+
             {questions.map((question, index) => (
               <div key={index} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <div className="flex gap-4 items-start mb-4">
@@ -192,7 +212,7 @@ export default function MockInterview() {
               </div>
             ))}
 
-            {/* Submit */}
+
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-gray-800">Ready to submit?</p>

@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     
     "corsheaders",
     'resumes',
+    
+    "channels",
 ]
 
 SITE_ID = 1
@@ -136,7 +138,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": "1000/day",
+        "user": "100/day",
     },
 }
 
@@ -181,3 +183,14 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # API Keys
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+ASGI_APPLICATION = "backend.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}

@@ -6,6 +6,7 @@ import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
 import ResumeUpload from "../pages/ResumeUpload";
 import MockInterview from "../pages/MockInterview";
+import Chat from "../pages/Chat";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -20,6 +21,7 @@ export default function AppRoutes() {
     } />
     <Route path="/resume-upload" element={<ResumeUpload/>}/>
     <Route path="/mock-interview" element={<MockInterview/>}/>
+    <Route path="/chat" element={<Chat/>}/>
     </Routes>
   );
 }

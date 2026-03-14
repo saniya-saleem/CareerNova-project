@@ -22,20 +22,22 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Authentication
+    
     path('api/auth/', include('authentication.urls')),
 
-    # Profile
+    
     path('api/', include('profiles.urls')),
 
-    # Allauth (if you are using it)
+    
     path("accounts/", include("allauth.urls")),
     
     path("api/resume/", include("resumes.urls")),
     
     path("api/interview/", include("interview.urls")),
+    
+    
 ]
 
-# Serve media files during development
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -69,7 +69,7 @@ export default function ResumeUpload() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/40 py-12 px-4">
       <div className="max-w-3xl mx-auto">
 
-        {/* Header */}
+        
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
@@ -83,13 +83,13 @@ export default function ResumeUpload() {
           </p>
         </div>
 
-        {/* Upload Card */}
+        
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">
             Upload Your Resume
           </h2>
 
-          {/* Drag & Drop Zone */}
+         
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -144,7 +144,7 @@ export default function ResumeUpload() {
             )}
           </div>
 
-          {/* Upload Button */}
+         
           <button
             onClick={handleUpload}
             disabled={loading || !file}
@@ -169,11 +169,11 @@ export default function ResumeUpload() {
           </button>
         </div>
 
-        {/* Results */}
+        
         {result && (
           <div className="flex flex-col gap-4">
 
-            {/* ATS Score Card */}
+            
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -199,10 +199,10 @@ export default function ResumeUpload() {
               </div>
             </div>
 
-            {/* Skills Grid */}
+           
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-              {/* Skills Found */}
+              
               {result.skills_found?.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
                   <div className="flex items-center gap-2 mb-4">
@@ -226,7 +226,7 @@ export default function ResumeUpload() {
                 </div>
               )}
 
-              {/* Missing Skills */}
+              
               {result.missing_skills?.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
                   <div className="flex items-center gap-2 mb-4">
@@ -251,7 +251,7 @@ export default function ResumeUpload() {
               )}
             </div>
 
-            {/* Suggestions */}
+            
             {result.suggestions?.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-4">

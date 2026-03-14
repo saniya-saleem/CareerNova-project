@@ -19,9 +19,6 @@ from .serializers import RegisterSerializer, LoginSerializer
 User = get_user_model()
 
 
-# -------------------------
-# Async Email Function
-# -------------------------
 def send_welcome_email(email, username):
     try:
         send_mail(
@@ -35,9 +32,7 @@ def send_welcome_email(email, username):
         print("Email error:", e)
 
 
-# -------------------------
-# Register View
-# -------------------------
+
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -47,7 +42,7 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            # ✅ Send email in background thread
+            
             threading.Thread(
                 target=send_welcome_email,
                 args=(user.email, user.username)
@@ -88,9 +83,7 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# -------------------------
-# Login View
-# -------------------------
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -133,9 +126,7 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# -------------------------
-# Google Login
-# -------------------------
+
 class GoogleLogin(APIView):
     permission_classes = [AllowAny]
 
@@ -198,9 +189,7 @@ class GoogleLogin(APIView):
             return Response({"error": str(e)}, status=400)
 
 
-# -------------------------
-# Refresh Token
-# -------------------------
+
 class RefreshTokenView(TokenRefreshView):
     permission_classes = [AllowAny]
 
@@ -229,9 +218,7 @@ class RefreshTokenView(TokenRefreshView):
         return response
 
 
-# -------------------------
-# Logout
-# -------------------------
+
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -249,9 +236,7 @@ class LogoutView(APIView):
         return response
 
 
-# -------------------------
-# User Info
-# -------------------------
+
 class UserInfoView(APIView):
     permission_classes = [IsAuthenticated]
 

@@ -7,10 +7,10 @@ export default function Dashboard() {
   return (
     <div className="p-10 bg-gray-50 min-h-screen">
 
-      {/* Header */}
-      <h1 className="text-3xl font-bold mb-6">Welcome back 👋</h1>
+      
+      <h1 className="text-3xl font-bold mb-6">Welcome back </h1>
 
-      {/* Stats */}
+      
       <div className="grid grid-cols-3 gap-6 mb-10">
 
         <div className="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
@@ -30,10 +30,10 @@ export default function Dashboard() {
 
       </div>
 
-      {/* Feature Cards */}
+      
       <div className="grid grid-cols-3 gap-6">
 
-        {/* Resume Analyzer */}
+        
         <div
           onClick={() => navigate("/resume-upload")}
           className="bg-indigo-100 p-6 rounded-xl cursor-pointer hover:scale-105 hover:shadow transition"
@@ -44,7 +44,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Mock Interview */}
+        
         <div
           onClick={() => navigate("/mock-interview")}
           className="bg-purple-100 p-6 rounded-xl cursor-pointer hover:scale-105 hover:shadow transition"
@@ -55,7 +55,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Analytics */}
+        
         <div
           onClick={() => navigate("/analytics")}
           className="bg-pink-100 p-6 rounded-xl cursor-pointer hover:scale-105 hover:shadow transition"

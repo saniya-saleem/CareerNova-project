@@ -2,6 +2,7 @@ import { useState } from "react";
 import { loginUser } from "../api/auth";
 import GoogleLoginBtn from "../components/GoogleLoginBtn";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function Login() {
 
@@ -21,16 +22,16 @@ export default function Login() {
 
       console.log("Login response:", response);
 
-      alert("Login successful ✅");
+      toast.success("Login successful ");
 
-      // redirect after login
+      
       navigate("/");
 
     } catch (err) {
 
       console.log("LOGIN ERROR:", err);
 
-      alert(
+      toast.error(
         err?.message ||
         err?.error ||
         "Invalid email or password"
@@ -89,7 +90,7 @@ export default function Login() {
           <GoogleLoginBtn />
         </div>
 
-        {/* Register link */}
+        
         <p className="text-center text-sm text-gray-500">
           Don't have an account?{" "}
           <span

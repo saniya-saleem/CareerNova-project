@@ -22,13 +22,13 @@ def analyze_resume(text):
         if skill in text:
             found_skills.append(skill)
 
-    # ATS Score
+   
     score = (len(found_skills) / len(KEY_SKILLS)) * 100
 
-    # Missing skills
+    
     missing_skills = [skill for skill in KEY_SKILLS if skill not in found_skills]
 
-    # Suggestions
+    
     suggestions = []
 
     if "python" not in found_skills:
