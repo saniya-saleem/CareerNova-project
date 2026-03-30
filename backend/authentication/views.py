@@ -32,7 +32,28 @@ def send_welcome_email(email, username):
         print("Email error:", e)
 
 
+# 🔥 COMMON FUNCTION TO SET COOKIES
+def set_auth_cookies(response, refresh):
+    response.set_cookie(
+        key="access_token",
+        value=str(refresh.access_token),
+        httponly=True,
+        secure=False,
+        samesite="Lax",
+    )
 
+    response.set_cookie(
+        key="refresh_token",
+        value=str(refresh),
+        httponly=True,
+        secure=False,
+        samesite="Lax",
+    )
+
+    return response
+
+
+# ───────────────── REGISTER ─────────────────
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -42,7 +63,6 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            
             threading.Thread(
                 target=send_welcome_email,
                 args=(user.email, user.username)
@@ -57,33 +77,18 @@ class RegisterView(APIView):
                         "id": user.id,
                         "username": user.username,
                         "email": user.email,
+                        "role": user.role,
                     }
                 },
                 status=status.HTTP_201_CREATED
             )
 
-            response.set_cookie(
-                key="access",
-                value=str(refresh.access_token),
-                httponly=True,
-                secure=False,
-                samesite="Lax"
-            )
-
-            response.set_cookie(
-                key="refresh",
-                value=str(refresh),
-                httponly=True,
-                secure=False,
-                samesite="Lax"
-            )
-
-            return response
+            return set_auth_cookies(response, refresh)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
+# ───────────────── LOGIN ─────────────────
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -91,7 +96,6 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
 
         if serializer.is_valid():
-
             user = serializer.validated_data["user"]
 
             refresh = RefreshToken.for_user(user)
@@ -102,43 +106,26 @@ class LoginView(APIView):
                     "id": user.id,
                     "username": user.username,
                     "email": user.email,
+                    "role": user.role,
                 }
             })
 
-            response.set_cookie(
-                key="access",
-                value=str(refresh.access_token),
-                httponly=True,
-                secure=False,
-                samesite="Lax"
-            )
-
-            response.set_cookie(
-                key="refresh",
-                value=str(refresh),
-                httponly=True,
-                secure=False,
-                samesite="Lax"
-            )
-
-            return response
+            return set_auth_cookies(response, refresh)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
+# ───────────────── GOOGLE LOGIN ─────────────────
 class GoogleLogin(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-
         token = request.data.get("access_token")
 
         if not token:
             return Response({"error": "No token"}, status=400)
 
         try:
-
             idinfo = id_token.verify_oauth2_token(
                 token,
                 requests.Request(),
@@ -164,38 +151,22 @@ class GoogleLogin(APIView):
             response = Response({
                 "email": email,
                 "name": name,
+                "role": user.role,
                 "message": "Google login successful"
             })
 
-            response.set_cookie(
-                key="access",
-                value=str(refresh.access_token),
-                httponly=True,
-                secure=False,
-                samesite="Lax"
-            )
-
-            response.set_cookie(
-                key="refresh",
-                value=str(refresh),
-                httponly=True,
-                secure=False,
-                samesite="Lax"
-            )
-
-            return response
+            return set_auth_cookies(response, refresh)
 
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
 
-
+# ───────────────── REFRESH TOKEN ─────────────────
 class RefreshTokenView(TokenRefreshView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-
-        refresh_token = request.COOKIES.get("refresh")
+        refresh_token = request.COOKIES.get("refresh_token")
 
         if refresh_token:
             request.data._mutable = True
@@ -208,44 +179,43 @@ class RefreshTokenView(TokenRefreshView):
             access_token = response.data.get("access")
 
             response.set_cookie(
-                key="access",
+                key="access_token",
                 value=access_token,
                 httponly=True,
                 secure=False,
-                samesite="Lax"
+                samesite="Lax",
             )
 
         return response
 
 
-
+# ───────────────── LOGOUT ─────────────────
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-
         response = Response(
             {"message": "Logout successful"},
             status=status.HTTP_200_OK
         )
 
-        response.delete_cookie("access")
-        response.delete_cookie("refresh")
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
         response.delete_cookie("csrftoken")
 
         return response
 
 
-
+# ───────────────── USER INFO ─────────────────
 class UserInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-
         user = request.user
 
         return Response({
             "id": user.id,
             "username": user.username,
-            "email": user.email
+            "email": user.email,
+            "role": user.role,
         })

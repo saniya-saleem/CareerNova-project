@@ -35,6 +35,11 @@ urlpatterns = [
     
     path("api/interview/", include("interview.urls")),
     
+    path("api/admin-panel/", include("admin_panel.urls")),
+    
+    path("api/chat/", include("chat.urls")),
+    
+    path("api/session/", include("session.urls")),
     
 ]
 

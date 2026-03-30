@@ -74,6 +74,20 @@ export default function Navbar() {
           >
             Mock Interview
           </span>
+
+          <span
+            onClick={() => navigate("/room")}
+            className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg cursor-pointer transition-all duration-150"
+          >
+          Practice Session
+        </span>
+
+          <span
+          onClick={() => navigate("/chat")}
+          className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg cursor-pointer transition-all duration-150"
+          >
+          AI chat
+        </span>
         </div>
 
         {/* Right Actions */}

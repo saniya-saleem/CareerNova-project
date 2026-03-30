@@ -17,20 +17,21 @@ export default function Login() {
     e.preventDefault();
 
     try {
-
       const response = await loginUser(form);
 
       console.log("Login response:", response);
 
-      toast.success("Login successful ");
+      toast.success("Login successful");
 
-      
-      navigate("/");
+      // ✅ Redirect based on role
+      if (response?.user?.role === "admin") {
+        navigate("/admin-panel");
+      } else {
+        navigate("/");
+      }
 
     } catch (err) {
-
       console.log("LOGIN ERROR:", err);
-
       toast.error(
         err?.message ||
         err?.error ||
@@ -90,7 +91,6 @@ export default function Login() {
           <GoogleLoginBtn />
         </div>
 
-        
         <p className="text-center text-sm text-gray-500">
           Don't have an account?{" "}
           <span

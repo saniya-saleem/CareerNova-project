@@ -62,7 +62,6 @@ Return ONLY valid JSON in this format:
 
             questions = questions[:5]
 
-            # ← add this
             log_activity(
                 request.user,
                 "AI Mock Interview Started",
@@ -93,24 +92,24 @@ class EvaluateAnswersView(APIView):
         client = Groq(api_key=settings.GROQ_API_KEY)
 
         prompt = f"""
-You are a senior technical interviewer.
+        You are a senior technical interviewer.
 
-Evaluate the candidate answers.
+        Evaluate the candidate answers.
 
-Return ONLY valid JSON.
+        Return ONLY valid JSON.
 
-Format:
+        Format:
 
-{{
- "score": 85,
- "strengths": ["..."],
- "weaknesses": ["..."],
- "suggestions": ["..."]
-}}
+        {{
+        "score": 85,
+        "strengths": ["..."],
+        "weaknesses": ["..."],
+        "suggestions": ["..."]
+        }}
 
-Answers:
-{json.dumps(answers, indent=2)}
-"""
+        Answers:
+        {json.dumps(answers, indent=2)}
+        """
 
         try:
             response = client.chat.completions.create(
@@ -120,7 +119,7 @@ Answers:
 
             content = response.choices[0].message.content.strip()
 
-            # remove markdown formatting
+           
             content = content.replace("```json", "").replace("```", "").strip()
 
             print("AI RESPONSE:", content)
@@ -140,4 +139,41 @@ Answers:
 
         except Exception as e:
             print("EVALUATION ERROR:", str(e))
+            return Response({"error": str(e)}, status=500)
+
+
+
+class SpeechToTextView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        audio_file = request.FILES.get("audio")
+
+        if not audio_file:
+            return Response({"error": "No audio file"}, status=400)
+
+        if not settings.GROQ_API_KEY:
+            return Response({"error": "Groq API key not configured"}, status=500)
+
+        try:
+            client = Groq(api_key=settings.GROQ_API_KEY)
+
+            # transcription = client.audio.transcriptions.create(
+            #     file=(audio_file.name, audio_file.read(), audio_file.content_type),
+            #     model="whisper-large-v3",
+            #     response_format="text",
+            # )
+            
+            transcription = client.audio.transcriptions.create(
+                file=(audio_file.name, audio_file.read(), audio_file.content_type),
+                model="whisper-large-v3",
+                response_format="text",
+                prompt="Interview answer about software development.",  # ✅ add this line only
+            )
+              
+
+            return Response({"text": transcription})
+
+        except Exception as e:
+            print("🔥 SPEECH ERROR:", type(e).__name__, str(e))
             return Response({"error": str(e)}, status=500)

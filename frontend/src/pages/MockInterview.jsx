@@ -8,235 +8,392 @@ export default function MockInterview() {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(false);
-  const [errorMSG, setErrorMSG] = useState("");
+  const [recordingIndex, setRecordingIndex] = useState(null);
 
+  // 🚀 START INTERVIEW
   const startInterview = async () => {
     if (!role) {
-      toast.error("Please select a role first!");
+      toast.error("Select a role");
       return;
     }
+
     setLoading(true);
-    setErrorMSG("");
     setQuestions([]);
     setAnswers({});
+
     try {
-      const response = await axios.post(
+      const res = await axios.post(
         "http://localhost:8000/api/interview/generate/",
         { role },
         { withCredentials: true }
       );
-      setQuestions(response.data.questions || []);
-      toast.success("Questions generated successfully!");
-    } catch (error) {
-      console.error(error);
-      const errMsg = error.response?.data?.error || "Failed to generate questions.";
-      setErrorMSG(errMsg);
-      toast.error("Error generating questions.");
+
+      setQuestions(res.data.questions || []);
+      toast.success("Questions ready!");
+    } catch {
+      toast.error("Failed to load questions");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAnswerChange = (index, value) => {
-    setAnswers((prev) => ({ ...prev, [index]: value }));
+  // ✍️ TEXT INPUT
+  const handleAnswerChange = (i, val) => {
+    setAnswers((prev) => ({ ...prev, [i]: val }));
   };
 
-const submitAnswers = async () => {
-  const answeredCount = Object.keys(answers).filter(k => answers[k]?.trim()).length;
+// const startRecording = async (index) => {
+//   try {
+//     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-  if (answeredCount < questions.length) {
-    toast.error("Please answer all questions!");
+//     const mediaRecorder = new MediaRecorder(stream);
+//     const chunks = [];
+
+//     setRecordingIndex(index);
+
+//     mediaRecorder.ondataavailable = (e) => {
+//       chunks.push(e.data);
+//     };
+
+//     mediaRecorder.start();
+
+//     // ⏱️ RECORD 6 SECONDS
+//     setTimeout(() => {
+//       mediaRecorder.stop();
+//     }, 6000);
+
+//     mediaRecorder.onstop = async () => {
+//       const blob = new Blob(chunks, { type: "audio/webm" });
+
+//       const formData = new FormData();
+//       formData.append("audio", blob, "voice.webm");
+
+//       try {
+//         const res = await axios.post(
+//           "http://localhost:8000/api/interview/speech-to-text/",
+//           formData,
+//           { withCredentials: true }
+//         );
+
+//         let text = res.data.text;
+
+//         // 🔥 CLEAN TEXT (IMPORTANT)
+//         text = text.replace(/\b(\w+)( \1\b)+/g, "$1"); // remove repeats
+//         text = text.replace(/\b(uh|um|ah)\b/gi, "");   // remove fillers
+//         text = text.trim();
+
+//         if (!text || text.length < 3) {
+//           toast.error("Speak clearly");
+//           return;
+//         }
+
+//         setAnswers((prev) => ({
+//           ...prev,
+//           [index]: (prev[index] || "") + " " + text,
+//         }));
+
+//       } catch (err) {
+//         console.error(err);
+//         toast.error("Speech recognition failed");
+//       }
+
+//       setRecordingIndex(null);
+//     };
+
+//   } catch (err) {
+//     toast.error("Mic permission denied");
+//   }
+// };
+
+
+// const startRecording = async (index) => {
+//   try {
+//     // const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+//     const stream = await navigator.mediaDevices.getUserMedia({ 
+//   audio: {
+//     echoCancellation: true,
+//     noiseSuppression: true,
+//     sampleRate: 44100,
+//     channelCount: 1,
+//   } 
+// });
+//     // const mediaRecorder = new MediaRecorder(stream);
+//     const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+//   ? "audio/webm;codecs=opus"
+//   : "audio/ogg;codecs=opus";
+
+//     const mediaRecorder = new MediaRecorder(stream, { mimeType });
+//     console.log("MIME TYPE:", mediaRecorder.mimeType);
+//     const chunks = [];
+
+//     setRecordingIndex(index);
+
+//     mediaRecorder.ondataavailable = (e) => {
+//       chunks.push(e.data);
+//     };
+
+//     mediaRecorder.start();
+
+//     setTimeout(() => {
+//       mediaRecorder.stop();
+//     }, 10000);
+
+//     mediaRecorder.onstop = async () => {
+//       const blob = new Blob(chunks, { type: "audio/webm" });
+//       console.log("BLOB SIZE:", blob.size);
+
+//       // ✅ FIX 1: Block silent/empty audio before sending
+//       if (blob.size < 500) {
+//         toast.error("No speech detected, try again");
+//         setRecordingIndex(null);
+//         return;
+//       }
+
+//       const formData = new FormData();
+//       formData.append("audio", blob, "voice.webm");
+
+//       try {
+//         const res = await axios.post(
+//           "http://localhost:8000/api/interview/speech-to-text/",
+//           formData,
+//           { withCredentials: true }
+//         );
+
+//         let text = res.data.text?.trim();
+//         console.log("WHISPER RESULT:", JSON.stringify(text));
+
+//         // ✅ FIX 2: Block Whisper hallucinations
+//         const hallucinations = [
+//           "you", "thank you", "thank you.", "thanks", "bye",
+//           "goodbye", "okay", "ok", ".", "", "you."
+//         ];
+//         if (!text || hallucinations.includes(text.toLowerCase())) {
+//           toast.error("Couldn't detect speech, please try again");
+//           setRecordingIndex(null);
+//           return;
+//         }
+
+//         // ✅ FIX 3: Clean up filler words
+//         text = text.replace(/\b(\w+)( \1\b)+/g, "$1");
+//         text = text.replace(/\b(uh|um|ah)\b/gi, "").trim();
+
+//         if (text.length < 3) {
+//           toast.error("Speak clearly and louder");
+//           setRecordingIndex(null);
+//           return;
+//         }
+
+//         setAnswers((prev) => ({
+//           ...prev,
+//           [index]: (prev[index] || "") + " " + text,
+//         }));
+
+//       } catch (err) {
+//         console.error(err);
+//         toast.error("Speech recognition failed");
+//       }
+
+//       setRecordingIndex(null);
+//     };
+
+//   } catch (err) {
+//     toast.error("Mic permission denied");
+//   }
+// };
+
+const startRecording = (index) => {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    toast.error("Your browser doesn't support speech recognition");
     return;
   }
 
-  try {
-    const formattedAnswers = questions.map((q, index) => ({
-      question: q,
-      answer: answers[index]
+  const recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  setRecordingIndex(index);
+
+  recognition.start();
+
+  recognition.onresult = (event) => {
+    let text = event.results[0][0].transcript.trim();
+
+    text = text.replace(/\b(uh|um|ah)\b/gi, "").trim();
+
+    if (!text || text.length < 3) {
+      toast.error("Speak clearly");
+      setRecordingIndex(null);
+      return;
+    }
+
+    setAnswers((prev) => ({
+      ...prev,
+      [index]: (prev[index] || "") + " " + text,
     }));
 
-    const response = await axios.post(
-      "http://localhost:8000/api/interview/evaluate/",
-      { answers: formattedAnswers },
-      { withCredentials: true }
-    );
+    setRecordingIndex(null);
+  };
 
-    const result = response.data;
+  recognition.onerror = (e) => {
+    console.error("Speech error:", e.error);
+    toast.error("Speech recognition failed: " + e.error);
+    setRecordingIndex(null);
+  };
 
-    toast.success(`Interview Score: ${result.score ?? 0}/100`);
-
-    console.log("Strengths:", result.strengths);
-    console.log("Weaknesses:", result.weaknesses);
-    console.log("Suggestions:", result.suggestions);
-
-  } catch (error) {
-    console.error(error);
-    toast.error("Failed to evaluate interview.");
-  }
+  recognition.onend = () => {
+    setRecordingIndex(null);
+  };
 };
+  // 📤 SUBMIT
+  const submitAnswers = async () => {
+    const filled = Object.keys(answers).length;
+
+    if (filled < questions.length) {
+      toast.error("Answer all questions");
+      return;
+    }
+
+    try {
+      const formatted = questions.map((q, i) => ({
+        question: q,
+        answer: answers[i],
+      }));
+
+      const res = await axios.post(
+        "http://localhost:8000/api/interview/evaluate/",
+        { answers: formatted },
+        { withCredentials: true }
+      );
+
+      toast.success(`Score: ${res.data.score}/100`);
+      console.log(res.data);
+
+    } catch {
+      toast.error("Evaluation failed");
+    }
+  };
+
   const roles = [
-    { value: "Frontend Developer", icon: "🎨" },
-    { value: "Backend Developer", icon: "⚙️" },
-    { value: "Full Stack Developer", icon: "🚀" },
-    { value: "DevOps Engineer", icon: "🔧" },
-    { value: "Data Scientist", icon: "📊" },
+    "Frontend Developer",
+    "Backend Developer",
+    "Full Stack Developer",
+    "DevOps Engineer",
+    "Data Scientist",
   ];
 
-  const answeredCount = Object.keys(answers).filter(k => answers[k]?.trim()).length;
+  const progress = Object.keys(answers).length;
+
+  // 🎧 WAV ENCODER (IMPORTANT)
+  function encodeWAV(samples, sampleRate) {
+    let length = samples.reduce((acc, s) => acc + s.length, 0);
+    let buffer = new ArrayBuffer(44 + length * 2);
+    let view = new DataView(buffer);
+
+    function writeStr(v, o, s) {
+      for (let i = 0; i < s.length; i++) {
+        v.setUint8(o + i, s.charCodeAt(i));
+      }
+    }
+
+    writeStr(view, 0, "RIFF");
+    view.setUint32(4, 36 + length * 2, true);
+    writeStr(view, 8, "WAVE");
+    writeStr(view, 12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(view, 36, "data");
+    view.setUint32(40, length * 2, true);
+
+    let offset = 44;
+
+    samples.forEach((chunk) => {
+      for (let i = 0; i < chunk.length; i++) {
+        let s = Math.max(-1, Math.min(1, chunk[i]));
+        view.setInt16(offset, s * 0x7fff, true);
+        offset += 2;
+      }
+    });
+
+    return new Blob([view], { type: "audio/wav" });
+  }
 
   return (
     <>
-    <Navbar/>
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/40 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
+      <Navbar />
 
- 
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
-            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-            AI POWERED
-          </div>
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
-            Mock Interview
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-3xl mx-auto">
+
+          <h1 className="text-3xl font-bold text-center mb-6">
+            Mock Interview 
           </h1>
-          <p className="text-gray-500 text-base max-w-md mx-auto">
-            Generate customized interview questions based on your selected role and practice your answers.
-          </p>
-        </div>
 
- 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
-          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">
-            Select Your Role
-          </h2>
+          {/* ROLE */}
+          <div className="bg-white p-4 rounded shadow mb-5">
+            <div className="flex flex-wrap gap-2 mb-3">
+              {roles.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRole(r)}
+                  className={`px-3 py-1 rounded ${
+                    role === r ? "bg-indigo-600 text-white" : "bg-gray-200"
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
 
-          <div className="flex flex-wrap gap-2 mb-5">
-            {roles.map((r) => (
+            <button
+              onClick={startInterview}
+              className="w-full bg-indigo-600 text-white py-2 rounded"
+            >
+              {loading ? "Loading..." : "Start Interview"}
+            </button>
+          </div>
+
+          {/* QUESTIONS */}
+          {questions.map((q, i) => (
+            <div key={i} className="bg-white p-4 rounded shadow mb-4">
+              <p className="font-semibold mb-2">{i + 1}. {q}</p>
+
+              <textarea
+                value={answers[i] || ""}
+                onChange={(e) => handleAnswerChange(i, e.target.value)}
+                className="w-full border p-2 rounded"
+                placeholder="Type or speak..."
+              />
+
               <button
-                key={r.value}
-                onClick={() => setRole(r.value)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-150 ${
-                  role === r.value
-                    ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200"
-                    : "bg-gray-50 text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+                onClick={() => startRecording(i)}
+                className={`mt-2 px-3 py-1 rounded ${
+                  recordingIndex === i ? "bg-red-500 text-white" : "bg-indigo-500 text-white"
                 }`}
               >
-                <span>{r.icon}</span>
-                {r.value}
+                {recordingIndex === i ? "Recording..." : " Speak"}
               </button>
-            ))}
-          </div>
+            </div>
+          ))}
 
-
-          <button
-            onClick={startInterview}
-            disabled={loading || !role}
-            className="w-full py-3 bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-semibold rounded-xl shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-300 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
-                  <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                Generating Questions...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                Start Interview
-              </>
-            )}
-          </button>
+          {questions.length > 0 && (
+            <button
+              onClick={submitAnswers}
+              className="w-full bg-green-600 text-white py-3 rounded"
+            >
+              Submit ({progress}/{questions.length})
+            </button>
+          )}
         </div>
-
-        {errorMSG && (
-          <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
-            <svg className="w-4 h-4 fill-red-500 flex-shrink-0" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-            </svg>
-            <p className="text-sm font-medium">{errorMSG}</p>
-          </div>
-        )}
-
-
-        {questions.length > 0 && (
-          <div className="flex flex-col gap-4">
-
-
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                <span className="text-sm font-semibold text-gray-700">
-                  Progress
-                </span>
-                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-2 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-full transition-all duration-500"
-                    style={{ width: `${(answeredCount / questions.length) * 100}%` }}
-                  />
-                </div>
-              </div>
-              <span className="text-sm font-bold text-indigo-600 ml-4">
-                {answeredCount}/{questions.length}
-              </span>
-            </div>
-
-
-            {questions.map((question, index) => (
-              <div key={index} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                <div className="flex gap-4 items-start mb-4">
-                  <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-600 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-200">
-                    {index + 1}
-                  </div>
-                  <p className="font-semibold text-gray-800 leading-relaxed pt-1">
-                    {question}
-                  </p>
-                </div>
-
-                <textarea
-                  rows="3"
-                  placeholder="Write your answer here..."
-                  value={answers[index] || ""}
-                  onChange={(e) => handleAnswerChange(index, e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 resize-none transition"
-                />
-
-                {answers[index]?.trim() && (
-                  <div className="flex items-center gap-1.5 mt-2">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                    <span className="text-xs text-emerald-600 font-medium">Answer saved</span>
-                  </div>
-                )}
-              </div>
-            ))}
-
-
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-800">Ready to submit?</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {answeredCount < questions.length
-                    ? `${questions.length - answeredCount} question(s) remaining`
-                    : "All questions answered ✓"}
-                </p>
-              </div>
-              <button
-                onClick={submitAnswers}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-semibold rounded-xl shadow-md shadow-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                </svg>
-                Submit Answers
-              </button>
-            </div>
-
-          </div>
-        )}
       </div>
-    </div>
     </>
   );
 }
