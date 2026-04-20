@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
-from profiles.utils import log_activity  # ← add this
+from profiles.utils import log_activity 
 import json
 import re
 from groq import Groq
@@ -85,6 +85,7 @@ class EvaluateAnswersView(APIView):
             return Response({"error": "Groq API key not configured"}, status=500)
 
         answers = request.data.get("answers")
+        role = request.data.get("role", "Unknown Role")
 
         if not answers:
             return Response({"error": "Answers are required"}, status=400)
@@ -126,6 +127,13 @@ class EvaluateAnswersView(APIView):
 
             result = json.loads(content)
 
+            from analytics.models import InterviewResult
+            InterviewResult.objects.create(
+                user=request.user,
+                role=role,
+                score=result.get("score", 0)
+            )
+
             return Response(result)
 
         except json.JSONDecodeError:
@@ -158,22 +166,17 @@ class SpeechToTextView(APIView):
         try:
             client = Groq(api_key=settings.GROQ_API_KEY)
 
-            # transcription = client.audio.transcriptions.create(
-            #     file=(audio_file.name, audio_file.read(), audio_file.content_type),
-            #     model="whisper-large-v3",
-            #     response_format="text",
-            # )
-            
+
             transcription = client.audio.transcriptions.create(
                 file=(audio_file.name, audio_file.read(), audio_file.content_type),
                 model="whisper-large-v3",
                 response_format="text",
-                prompt="Interview answer about software development.",  # ✅ add this line only
+                prompt="Interview answer about software development.",  
             )
               
 
             return Response({"text": transcription})
 
         except Exception as e:
-            print("🔥 SPEECH ERROR:", type(e).__name__, str(e))
+            print(" SPEECH ERROR:", type(e).__name__, str(e))
             return Response({"error": str(e)}, status=500)

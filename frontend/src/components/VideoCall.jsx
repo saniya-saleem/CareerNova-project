@@ -89,12 +89,25 @@ const STATUS_DOT = {
 };
 
 
-export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" }) {
+export default function VideoCall({
+  roomCode,
+  wsBaseUrl = "ws://localhost:8000",
+  autoStart = true,
+  localLabel = "You",
+  remoteLabel = "Remote",
+  isInitiator = false,
+  layoutSize = "default",
+}) {
   const localVideoRef  = useRef(null);
   const remoteVideoRef = useRef(null);
   const pcRef          = useRef(null);
   const wsRef          = useRef(null);
   const localStreamRef = useRef(null);
+  const peerId         = useRef(Math.random().toString(36).substring(7)).current;
+  const hasNegotiated  = useRef(false);
+  const statusRef      = useRef("idle");
+  const hasStartedRef  = useRef(false);
+  const pendingIceRef  = useRef([]);
 
   const [status,      setStatus]      = useState("idle");
   const [micMuted,    setMicMuted]    = useState(false);
@@ -107,7 +120,11 @@ export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" 
   const isActive = status === "connecting" || status === "connected";
   const isEnded  = status === "ended";
 
-  // ── Cleanup ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+
   const cleanup = useCallback(() => {
     pcRef.current?.close();
     wsRef.current?.close();
@@ -115,10 +132,21 @@ export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" 
     pcRef.current  = null;
     wsRef.current  = null;
     localStreamRef.current = null;
+    hasNegotiated.current = false;
+    hasStartedRef.current = false;
+    pendingIceRef.current = [];
     if (localVideoRef.current)  localVideoRef.current.srcObject  = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
   }, []);
 
+  const flushPendingIceCandidates = useCallback(async (pc) => {
+    if (!pc?.remoteDescription) return;
+
+    while (pendingIceRef.current.length) {
+      const candidate = pendingIceRef.current.shift();
+      await pc.addIceCandidate(new RTCIceCandidate(candidate));
+    }
+  }, []);
 
   const createPC = useCallback((stream) => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
@@ -146,29 +174,152 @@ export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" 
     return pc;
   }, []);
 
+const createAndSendOffer = useCallback(async () => {
+  const pc = pcRef.current;
+  const ws = wsRef.current;
 
-  const handleSignal = useCallback(async (data) => {
-    const pc = pcRef.current;
-    if (!pc) return;
+  if (
+    !pc ||
+    !ws ||
+    ws.readyState !== WebSocket.OPEN ||
+    hasNegotiated.current ||
+    pc.signalingState !== "stable"
+  ) {
+    return;
+  }
 
+  console.log("CREATING OFFER");
+
+  hasNegotiated.current = true;
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  ws.send(JSON.stringify({
+    type: "offer",
+    sdp: pc.localDescription,
+  }));
+
+}, []);
+
+  const resetPeerConnection = useCallback(() => {
+    const stream = localStreamRef.current;
+    if (!stream) return;
+
+    if (pcRef.current) {
+      pcRef.current.ontrack = null;
+      pcRef.current.onicecandidate = null;
+      pcRef.current.onconnectionstatechange = null;
+      pcRef.current.close();
+    }
+
+    pendingIceRef.current = [];
+    hasNegotiated.current = false;
+    pcRef.current = createPC(stream);
+  }, [createPC]);
+
+
+const handleSignal = useCallback(async (data) => {
+  const pc = pcRef.current;
+  const ws = wsRef.current;
+
+  if (!pc || !ws) return;
+
+  try {
+    // 🔹 OFFER
     if (data.type === "offer") {
+      console.log("RECEIVED OFFER");
+
+      hasNegotiated.current = true;
+
       await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      await flushPendingIceCandidates(pc);
+
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      wsRef.current.send(JSON.stringify({ type: "answer", sdp: answer }));
-    } else if (data.type === "answer") {
+
+      ws.send(JSON.stringify({
+        type: "answer",
+        sdp: pc.localDescription,
+      }));
+    }
+
+    // 🔹 ANSWER
+    else if (data.type === "answer") {
+      console.log("RECEIVED ANSWER");
+
+      hasNegotiated.current = true;
+
       await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-    } else if (data.type === "ice-candidate") {
-      await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-    } else if (data.type === "peer-left") {
+      await flushPendingIceCandidates(pc);
+    }
+
+    // 🔹 ICE
+    else if (data.type === "ice-candidate") {
+      if (data.candidate) {
+        if (pc.remoteDescription) {
+          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } else {
+          pendingIceRef.current.push(data.candidate);
+        }
+      }
+    }
+
+    // 🔥 JOIN
+    else if (data.type === "join") {
+      console.log("JOIN RECEIVED");
+
+      ws.send(JSON.stringify({ type: "join-ack" }));
+
+      if (isInitiator && !hasNegotiated.current && pc.signalingState === "stable") {
+        await createAndSendOffer();
+      }
+    }
+
+    // 🔥 JOIN ACK
+    else if (data.type === "join-ack") {
+      console.log("JOIN ACK");
+
+      if (isInitiator && !hasNegotiated.current && pc.signalingState === "stable") {
+        await createAndSendOffer();
+      }
+    }
+
+    // 🔥 CREATE OFFER
+    else if (data.type === "create-offer") {
+      console.log("CREATE OFFER");
+
+      if (isInitiator && !hasNegotiated.current && pc.signalingState === "stable") {
+        await createAndSendOffer();
+      }
+    }
+
+    // 🔹 PEER LEFT
+    else if (data.type === "peer-left") {
+      console.log("PEER LEFT");
+
       setPeerLeft(true);
       setRemoteReady(false);
-      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-    }
-  }, []);
+      setStatus("connecting");
 
-  // ── Start call ────────────────────────────────────────────────────────────
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = null;
+      }
+
+      resetPeerConnection();
+    }
+
+  } catch (err) {
+    console.error("Signaling Error:", err);
+  }
+
+}, [createAndSendOffer, flushPendingIceCandidates, resetPeerConnection, isInitiator]);
+
+
   const startCall = useCallback(async () => {
+    if (!roomCode || hasStartedRef.current || pcRef.current || wsRef.current) return;
+
+    hasStartedRef.current = true;
     setStatus("connecting");
     setPeerLeft(false);
     setRemoteReady(false);
@@ -188,30 +339,45 @@ export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" 
       const ws = new WebSocket(`${wsBaseUrl}/ws/call/${roomCode}/`);
       wsRef.current = ws;
 
-      ws.onopen = async () => {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        ws.send(JSON.stringify({ type: "offer", sdp: offer }));
-      };
+      // ws.onopen = () => {
+      //   hasNegotiated.current = false;
+      //   ws.send(JSON.stringify({ type: "join", peerId }));
+      // };
+ ws.onopen = () => {
+  console.log("WS CONNECTED");
 
-      ws.onmessage = (e) => handleSignal(JSON.parse(e.data));
+  hasNegotiated.current = false;
+
+  ws.send(JSON.stringify({ type: "join" }));
+};
+
+      // ws.onmessage = (e) => handleSignal(JSON.parse(e.data));
+      ws.onmessage = (e) => {
+  const data = JSON.parse(e.data);
+  console.log("WS SIGNAL:", data);
+  handleSignal(data);
+};
       ws.onerror   = ()  => setStatus("ended");
-      ws.onclose   = ()  => { if (status !== "ended") setStatus("ended"); };
+      ws.onclose   = ()  => {
+        if (statusRef.current !== "ended") {
+          setStatus("ended");
+        }
+        wsRef.current = null;
+        hasStartedRef.current = false;
+      };
 
     } catch (err) {
       console.error("Call error:", err);
+      hasStartedRef.current = false;
       setStatus("idle");
     }
-  }, [audioOnly, roomCode, wsBaseUrl, createPC, handleSignal, status]);
+  }, [audioOnly, roomCode, wsBaseUrl, createPC, handleSignal]);
 
-  // ── End call ──────────────────────────────────────────────────────────────
   const endCall = useCallback(() => {
     cleanup();
     setStatus("ended");
     setRemoteReady(false);
   }, [cleanup]);
-
-  // ── Toggle mic ────────────────────────────────────────────────────────────
   const toggleMic = useCallback(() => {
     const track = localStreamRef.current?.getAudioTracks()[0];
     if (!track) return;
@@ -219,7 +385,7 @@ export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" 
     setMicMuted((v) => !v);
   }, []);
 
-  // ── Toggle camera ─────────────────────────────────────────────────────────
+  
   const toggleCam = useCallback(() => {
     const track = localStreamRef.current?.getVideoTracks()[0];
     if (!track) return;
@@ -227,13 +393,11 @@ export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" 
     setCamOff((v) => !v);
   }, []);
 
-  // ── Toggle audio-only (before call only) ──────────────────────────────────
   const toggleAudioOnly = useCallback(() => {
     if (isActive) return;
     setAudioOnly((v) => !v);
   }, [isActive]);
 
-  // ── Copy room code ────────────────────────────────────────────────────────
   const copyRoomCode = useCallback(() => {
     navigator.clipboard.writeText(roomCode);
     setCopied(true);
@@ -242,8 +406,26 @@ export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" 
 
   useEffect(() => () => cleanup(), [cleanup]);
 
+  useEffect(() => {
+    cleanup();
+    setStatus("idle");
+    setPeerLeft(false);
+    setRemoteReady(false);
+    setMicMuted(false);
+    setCamOff(false);
+  }, [cleanup, roomCode]);
+
+  useEffect(() => {
+    if (!autoStart || !roomCode || status !== "idle") return;
+    startCall();
+  }, [autoStart, roomCode, startCall, status]);
+
   return (
-    <div className="flex flex-col gap-4 bg-gray-950 rounded-2xl p-5 w-full max-w-3xl mx-auto text-slate-100">
+    <div
+      className={`flex flex-col gap-4 bg-gray-950 rounded-2xl p-5 w-full mx-auto text-slate-100 transition-all duration-300 ${
+        layoutSize === "wide" ? "max-w-[92rem]" : "max-w-3xl"
+      }`}
+    >
 
       {/* ── Room code banner ── */}
       <div className="flex items-center gap-3 bg-gray-900 rounded-xl px-4 py-3 border border-gray-800">
@@ -284,13 +466,13 @@ export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" 
                 </div>
               ) : (
                 <span className="text-slate-600 text-sm italic text-center">
-                  {peerLeft ? "Peer disconnected" : isActive ? "Waiting for peer…" : "Remote feed"}
+                  {peerLeft ? "Peer disconnected" : isActive ? "Waiting for peer..." : "Remote feed"}
                 </span>
               )}
             </div>
           )}
           <span className="absolute bottom-2 left-2 text-xs font-semibold text-slate-400 bg-black/50 px-2 py-0.5 rounded z-10">
-            Remote
+            {remoteLabel}
           </span>
         </div>
 
@@ -308,12 +490,12 @@ export default function VideoCall({ roomCode, wsBaseUrl = "ws://localhost:8000" 
           {(camOff || audioOnly) && (
             <div className="flex items-center justify-center z-10">
               <span className="text-slate-600 text-sm italic">
-                {audioOnly ? "🎙 Audio only" : "Camera off"}
+                {audioOnly ? "Audio only" : "Camera off"}
               </span>
             </div>
           )}
           <span className="absolute bottom-2 left-2 text-xs font-semibold text-slate-400 bg-black/50 px-2 py-0.5 rounded z-10">
-            You
+            {localLabel}
           </span>
         </div>
       </div>

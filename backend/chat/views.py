@@ -1,12 +1,15 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser
 from rest_framework import status
 from .models import Room
 from .serializers import RoomSerializer
+from backend.throttles import SessionWriteThrottle, SessionReadThrottle, SessionAdminThrottle
 
 class CreateRoomView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [SessionWriteThrottle]
 
     def post(self, request):
         code = Room.generate_code()
@@ -20,6 +23,7 @@ class CreateRoomView(APIView):
 
 class JoinRoomView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [SessionWriteThrottle]
 
     def post(self, request, code):
         try:
@@ -36,6 +40,7 @@ class JoinRoomView(APIView):
 
 class RoomDetailView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [SessionReadThrottle]
 
     def get(self, request, code):
         try:
@@ -58,6 +63,7 @@ class RoomDetailView(APIView):
 
 class CloseRoomView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [SessionWriteThrottle]
 
     def post(self, request, code):
         try:
@@ -75,10 +81,11 @@ class CloseRoomView(APIView):
         return Response({"message": "Room closed."})
     
     
-from rest_framework.permissions import IsAdminUser
+
 
 class RoomListView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [SessionAdminThrottle]
 
     def get(self, request):
         rooms = Room.objects.all().order_by("-created_at")

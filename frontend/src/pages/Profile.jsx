@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import Navbar from "../components/Navbar";
+import { Edit2, MapPin, Phone, CheckCircle2, XCircle, Save, Clock, Activity, Loader2, Camera, User } from "lucide-react";
+import { motion } from "framer-motion";
 
 function Profile() {
   const [profile, setProfile] = useState({});
@@ -21,7 +23,7 @@ function Profile() {
     axios
       .get("http://localhost:8000/api/profile/activities/", { withCredentials: true })
       .then((res) => setActivities(res.data))
-      .catch(() => toast.error("Failed to load activities"))
+      .catch(() => console.error("Failed to load activities")) 
       .finally(() => setActivitiesLoading(false));
   }, []);
 
@@ -34,6 +36,7 @@ function Profile() {
     if (file) {
       setProfile({ ...profile, image: file });
       setImagePreview(URL.createObjectURL(file));
+      setEditing(true); 
     }
   };
 
@@ -72,39 +75,63 @@ function Profile() {
   };
 
   const activityColors = [
-    "bg-indigo-500",
-    "bg-violet-500",
-    "bg-emerald-500",
-    "bg-amber-500",
-    "bg-rose-500",
-    "bg-cyan-500",
+    "bg-blue-500", "bg-violet-500", "bg-emerald-500", 
+    "bg-amber-500", "bg-rose-500", "bg-cyan-500"
   ];
 
   return (
-    <>
+    <div className="min-h-screen bg-[var(--bg-main)]">
       <Navbar />
-      <div className="min-h-screen bg-gray-50 py-10 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6 items-start">
+      <Toaster position="top-center" />
 
-         
-          <div className="w-full md:w-80 flex-shrink-0 flex flex-col gap-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        
+        {/* Header with Save Button (Sticky on mobile) */}
+        <div className="flex items-center justify-between mb-8 sticky top-20 z-40 bg-[var(--bg-main)]/90 backdrop-blur-md py-4 sm:static sm:bg-transparent">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--text-main)]">Profile Settings</h1>
+            <p className="text-[var(--text-muted)] mt-1">Manage your account and preferences.</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {editing && (
+              <button
+                onClick={() => setEditing(false)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl text-[var(--text-muted)] hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <XCircle className="w-4 h-4" /> Cancel
+              </button>
+            )}
+            <button
+              onClick={editing ? handleSubmit : () => setEditing(true)}
+              disabled={loading}
+              className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-sm transition-all duration-300 ${
+                editing ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20 active:scale-95" : "bg-primary-600 hover:bg-primary-700 shadow-primary-500/20 active:scale-95"
+              } disabled:opacity-50`}
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : editing ? <Save className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
+              {editing ? "Save Changes" : "Edit Profile"}
+            </button>
+          </div>
+        </div>
 
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+
+          
+          <div className="w-full lg:w-1/3 flex-shrink-0 flex flex-col gap-6">
             
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              
-              <div className="h-28 bg-gradient-to-br from-indigo-500 to-violet-600 relative">
-                <div
-                  className="absolute inset-0 opacity-20"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)",
-                    backgroundSize: "30px 30px",
-                  }}
-                />
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} 
+              className="card-base !p-0 overflow-hidden text-center"
+            >
+              {/* Cover Banner */}
+              <div className="h-32 bg-gradient-to-br from-primary-500 to-violet-600 relative overflow-hidden">
+                <div className="absolute inset-0 opacity-20 bg-[url('https://upload.wikimedia.org/wikipedia/commons/e/e6/Graph-paper.svg')] mix-blend-overlay"></div>
               </div>
 
-              <div className="px-5 pb-5 -mt-12 flex flex-col items-center text-center">
-                <div className="relative mb-3">
+              {/* Avatar */}
+              <div className="px-6 pb-6 -mt-16 flex flex-col items-center relative z-10">
+                <div className="relative mb-4 group">
                   <img
                     src={
                       imagePreview
@@ -114,281 +141,163 @@ function Profile() {
                         : `https://ui-avatars.com/api/?name=${profile.username || "User"}&background=6366f1&color=fff&size=200`
                     }
                     alt="Profile"
-                    className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg"
+                    className="w-32 h-32 rounded-3xl object-cover border-4 border-[var(--bg-surface)] shadow-xl transition-transform duration-300 group-hover:scale-[1.02]"
                   />
-                  <label className="absolute -bottom-1 -right-1 w-7 h-7 bg-indigo-600 hover:bg-indigo-700 rounded-lg flex items-center justify-center cursor-pointer shadow-md transition-colors">
-                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-                    </svg>
-                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                  </label>
+                  {editing && (
+                    <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary-600 text-white hover:bg-primary-700 rounded-xl flex items-center justify-center cursor-pointer shadow-lg shadow-primary-500/30 transition-all duration-200 hover:scale-110 border-2 border-[var(--bg-surface)]">
+                      <Camera className="w-5 h-5" />
+                      <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                    </label>
+                  )}
                 </div>
 
-                <h2 className="text-lg font-bold text-gray-900">{profile.username || "—"}</h2>
-                <p className="text-sm text-gray-400 mt-0.5 mb-4">{profile.email || "—"}</p>
+                <h2 className="text-xl font-bold text-[var(--text-main)] mb-1">{profile.username || "Anonymous"}</h2>
+                <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-sm mb-4">
+                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Online
+                </div>
 
-                <button
-                  onClick={() => setEditing(!editing)}
-                  className="w-full py-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-100 hover:-translate-y-0.5 hover:shadow-indigo-200 transition-all duration-200"
-                >
-                  {editing ? "Cancel Editing" : "Edit Profile"}
-                </button>
+                {editing ? (
+                  <textarea
+                    name="bio"
+                    value={profile.bio || ""}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Write a short bio about your career stack..."
+                    className="input-base text-sm resize-none mb-4 min-h-[80px]"
+                  />
+                ) : (
+                  <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-6 px-2">
+                    {profile.bio || "Crafting code, learning, and accelerating towards the next big opportunity."}
+                  </p>
+                )}
               </div>
-            </div>
+            </motion.div>
 
-           
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <h3 className="text-sm font-bold text-gray-900 mb-3">About me</h3>
-              {editing ? (
-                <textarea
-                  name="bio"
-                  value={profile.bio || ""}
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="Write something about yourself..."
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 resize-none transition"
-                />
-              ) : (
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  {profile.bio || "No bio added yet. Click Edit Profile to add one."}
-                </p>
-              )}
-
-              <div className="flex flex-wrap gap-2 mt-4">
-                {["Resume Review", "AI Interview", "Career Growth"].map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <h3 className="text-sm font-bold text-gray-900 mb-4">Contact Info</h3>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Phone</p>
+            {/* Contact Information Card */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              className="card-base"
+            >
+              <h3 className="text-sm font-bold text-[var(--text-main)] uppercase tracking-wider mb-5 flex items-center gap-2">
+                <User className="w-4 h-4 text-primary-500" /> Contact Details
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="group">
+                  <p className="text-xs font-semibold text-[var(--text-muted)] mb-1.5 uppercase tracking-wide">Phone</p>
                   {editing ? (
-                    <input
-                      type="text"
-                      name="phone"
-                      value={profile.phone || ""}
-                      onChange={handleChange}
-                      placeholder="Enter phone"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition"
-                    />
+                    <input type="text" name="phone" value={profile.phone || ""} onChange={handleChange} placeholder="+1 (555) 000-0000" className="input-base py-2 text-sm" />
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <svg className="w-3 h-3 fill-indigo-500" viewBox="0 0 24 24">
-                          <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-                        </svg>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-100 transition-colors">
+                        <Phone className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                       </div>
-                      <span className="text-sm text-gray-600">{profile.phone || "Not set"}</span>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">City</p>
-                  {editing ? (
-                    <input
-                      type="text"
-                      name="city"
-                      value={profile.city || ""}
-                      onChange={handleChange}
-                      placeholder="Enter city"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <svg className="w-3 h-3 fill-indigo-500" viewBox="0 0 24 24">
-                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                        </svg>
-                      </div>
-                      <span className="text-sm text-gray-600">{profile.city || "Not set"}</span>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Address</p>
-                  {editing ? (
-                    <input
-                      type="text"
-                      name="address"
-                      value={profile.address || ""}
-                      onChange={handleChange}
-                      placeholder="Enter address"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <svg className="w-3 h-3 fill-indigo-500" viewBox="0 0 24 24">
-                          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                        </svg>
-                      </div>
-                      <span className="text-sm text-gray-600">{profile.address || "Not set"}</span>
+                      <span className="text-sm font-medium text-[var(--text-main)]">{profile.phone || "Not specified"}</span>
                     </div>
                   )}
                 </div>
 
-
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Country</p>
+                <div className="group">
+                  <p className="text-xs font-semibold text-[var(--text-muted)] mb-1.5 uppercase tracking-wide">Location</p>
                   {editing ? (
-                    <input
-                      type="text"
-                      name="country"
-                      value={profile.country || ""}
-                      onChange={handleChange}
-                      placeholder="Enter country"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition"
-                    />
+                    <div className="space-y-2">
+                      <input type="text" name="city" value={profile.city || ""} onChange={handleChange} placeholder="City (e.g., San Francisco)" className="input-base py-2 text-sm" />
+                      <input type="text" name="country" value={profile.country || ""} onChange={handleChange} placeholder="Country" className="input-base py-2 text-sm" />
+                    </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <svg className="w-3 h-3 fill-indigo-500" viewBox="0 0 24 24">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                        </svg>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-100 transition-colors">
+                        <MapPin className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                       </div>
-                      <span className="text-sm text-gray-600">{profile.country || "Not set"}</span>
+                      <span className="text-sm font-medium text-[var(--text-main)]">
+                        {profile.city || profile.country ? `${profile.city || ""}${profile.city && profile.country ? ', ' : ''}${profile.country || ""}` : "Not specified"}
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
 
-          <div className="flex-1 flex flex-col gap-4">
+          {/* Right Column: Key Metrics & Activity */}
+          <div className="flex-1 flex flex-col gap-6">
 
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: "Interviews Done", value: "12", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
-                { label: "Resume Score", value: "87%", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
-                { label: "Jobs Applied", value: "5", icon: "M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex items-center gap-4"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 stroke-indigo-500" fill="none" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d={stat.icon} />
-                    </svg>
-                  </div>
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+               {/* Account Status */}
+               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card-base flex items-center justify-between !py-5 hover:border-emerald-500/30 transition-colors">
                   <div>
-                    <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-                    <p className="text-xs text-gray-400">{stat.label}</p>
+                    <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Account Status</p>
+                    <p className="text-lg font-bold flex items-center gap-2 text-[var(--text-main)]">
+                      Active <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    </p>
                   </div>
-                </div>
-              ))}
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h3 className="text-base font-bold text-gray-900">Account Information</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Your login credentials</p>
-                </div>
-                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
-                  Active
-                </span>
-              </div>
+               </motion.div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-xl px-4 py-3">
-                  <p className="text-xs text-gray-400 mb-1">Username</p>
-                  <p className="text-sm font-semibold text-gray-800">{profile.username || "—"}</p>
-                </div>
-                <div className="bg-gray-50 rounded-xl px-4 py-3">
-                  <p className="text-xs text-gray-400 mb-1">Email Address</p>
-                  <p className="text-sm font-semibold text-gray-800">{profile.email || "—"}</p>
-                </div>
-              </div>
+               {/* Email Reference */}
+               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card-base flex flex-col justify-center !py-5">
+                  <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Primary Email</p>
+                  <p className="text-sm font-semibold text-[var(--text-main)] truncate">{profile.email || "—"}</p>
+               </motion.div>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-              <h3 className="text-base font-bold text-gray-900 mb-4">Recent Activity</h3>
+
+            {/* Recent Activity Log */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+              className="card-base flex-1 min-h-[400px]"
+            >
+              <div className="flex items-center justify-between mb-6 border-b border-[var(--border-main)] pb-4">
+                <h3 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-primary-500" /> Recent Activity Log
+                </h3>
+              </div>
 
               {activitiesLoading ? (
-                <div className="space-y-3">
+                <div className="space-y-6 mt-4">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-start gap-3 animate-pulse">
-                      <div className="w-2 h-2 rounded-full mt-2 bg-gray-200 flex-shrink-0" />
-                      <div className="flex-1 flex items-start justify-between">
-                        <div className="space-y-1.5 flex-1">
-                          <div className="h-3.5 bg-gray-200 rounded w-3/4" />
-                          <div className="h-3 bg-gray-100 rounded w-1/2" />
-                        </div>
-                        <div className="h-3 bg-gray-100 rounded w-16 ml-4 mt-1" />
+                    <div key={i} className="flex gap-4 animate-pulse">
+                      <div className="w-2.5 h-2.5 rounded-full mt-1.5 bg-[var(--border-main)]" />
+                      <div className="w-full space-y-2">
+                        <div className="h-4 bg-[var(--border-main)] rounded w-1/3"></div>
+                        <div className="h-3 bg-[var(--border-main)]/50 rounded w-1/2"></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : activities.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
-                    <svg className="w-6 h-6 stroke-gray-300" fill="none" strokeWidth="1.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                <div className="flex flex-col items-center justify-center py-16 text-center h-full">
+                  <div className="w-16 h-16 rounded-3xl bg-[var(--bg-main)] border border-[var(--border-main)] flex items-center justify-center mb-4">
+                    <Clock className="w-8 h-8 text-[var(--text-muted)]" />
                   </div>
-                  <p className="text-sm font-medium text-gray-400">No activity yet</p>
-                  <p className="text-xs text-gray-300 mt-1">Your actions will appear here</p>
+                  <h4 className="text-[var(--text-main)] font-semibold text-lg mb-1">Quiet around here</h4>
+                  <p className="text-[var(--text-muted)] text-sm max-w-[250px]">Your platform actions, uploads, and interviews will be tracked right here.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-6 mt-4 relative before:absolute before:inset-0 before:ml-1 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-[var(--border-main)] before:to-transparent">
                   {activities.map((item, i) => (
-                    <div key={item.id ?? i} className="flex items-start gap-3">
-                      <div
-                        className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                          activityColors[i % activityColors.length]
-                        }`}
-                      />
-                      <div className="flex-1 flex items-start justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">{item.action}</p>
-                          {item.description && (
-                            <p className="text-xs text-gray-400">{item.description}</p>
-                          )}
+                    <div key={item.id ?? i} className="relative flex items-start gap-4 z-10">
+                      <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 shadow-sm border-2 border-[var(--bg-surface)] ${activityColors[i % activityColors.length]}`} />
+                      <div className="flex-1 bg-[var(--bg-main)] hover:bg-[var(--border-main)]/30 border border-[var(--border-main)] p-4 rounded-xl transition-colors">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
+                          <p className="text-sm font-semibold text-[var(--text-main)]">{item.action}</p>
+                          <span className="text-xs font-medium text-[var(--text-muted)] whitespace-nowrap bg-[var(--bg-surface)] px-2 py-1 rounded-md border border-[var(--border-main)]">
+                            {formatTime(item.created_at)}
+                          </span>
                         </div>
-                        <span className="text-xs text-gray-400 flex-shrink-0 ml-4">
-                          {formatTime(item.created_at)}
-                        </span>
+                        {item.description && (
+                          <p className="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">{item.description}</p>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-            {editing && (
-              <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-5 flex items-center justify-between">
-                <p className="text-sm text-gray-500">You have unsaved changes</p>
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50"
-                >
-                  {loading ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
-                        <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8H4z" />
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Changes"
-                  )}
-                </button>
-              </div>
-            )}
+            </motion.div>
+
           </div>
         </div>
-      </div>
-    </>
+      </main>
+    </div>
   );
 }
 

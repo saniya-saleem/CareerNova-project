@@ -11,9 +11,9 @@ import "react-circular-progressbar/dist/styles.css";
 
 function getGrade(score) {
   if (score >= 85) return { label: "Excellent", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" };
-  if (score >= 70) return { label: "Good",      color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" };
-  if (score >= 55) return { label: "Fair",      color: "#d97706", bg: "#fffbeb", border: "#fde68a" };
-  return              { label: "Needs Work", color: "#dc2626", bg: "#fef2f2", border: "#fecaca" };
+  if (score >= 70) return { label: "Good", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" };
+  if (score >= 55) return { label: "Fair", color: "#d97706", bg: "#fffbeb", border: "#fde68a" };
+  return { label: "Needs Work", color: "#dc2626", bg: "#fef2f2", border: "#fecaca" };
 }
 
 function buildSections(skillsFound = [], suggestions = []) {
@@ -76,9 +76,9 @@ function buildSections(skillsFound = [], suggestions = []) {
 }
 
 const STATUS = {
-  pass: { label: "Pass",    textColor: "#16a34a", bgColor: "#f0fdf4", borderColor: "#bbf7d0", barColor: "#22c55e" },
+  pass: { label: "Pass", textColor: "#16a34a", bgColor: "#f0fdf4", borderColor: "#bbf7d0", barColor: "#22c55e" },
   warn: { label: "Warning", textColor: "#b45309", bgColor: "#fffbeb", borderColor: "#fde68a", barColor: "#f59e0b" },
-  fail: { label: "Fail",    textColor: "#b91c1c", bgColor: "#fef2f2", borderColor: "#fecaca", barColor: "#ef4444" },
+  fail: { label: "Fail", textColor: "#b91c1c", bgColor: "#fef2f2", borderColor: "#fecaca", barColor: "#ef4444" },
 };
 
 const INDUSTRY_TIPS = [
@@ -116,9 +116,9 @@ Your role is to help the user understand EXACTLY what to change to improve their
 ───────────────────────────────────────────── */
 
 export default function ResumeUpload() {
-  const [file,      setFile]      = useState(null);
-  const [result,    setResult]    = useState(null);
-  const [loading,   setLoading]   = useState(false);
+  const [file, setFile] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
   const handleUpload = async () => {
@@ -249,8 +249,8 @@ function UploadCard({ file, setFile, loading, onUpload, hasResult, onReset }) {
             {loading ? (
               <>
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
                 Analyzing…
               </>
@@ -267,9 +267,9 @@ function UploadCard({ file, setFile, loading, onUpload, hasResult, onReset }) {
 ───────────────────────────────────────────── */
 
 function AIChatPanel({ result, sections }) {
-  const [messages,    setMessages]    = useState([]);
-  const [input,       setInput]       = useState("");
-  const [aiLoading,   setAiLoading]   = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
   const bottomRef = useRef(null);
 
   const systemPrompt = buildSystemPrompt(result, sections);
@@ -298,50 +298,50 @@ function AIChatPanel({ result, sections }) {
     ]);
   }, [result]);
 
-const sendMessage = async (text) => {
-  const userMsg = text || input.trim();
-  if (!userMsg || aiLoading) return;
+  const sendMessage = async (text) => {
+    const userMsg = text || input.trim();
+    if (!userMsg || aiLoading) return;
 
-  setInput("");
+    setInput("");
 
-  const newMessages = [...messages, { role: "user", content: userMsg }];
-  setMessages(newMessages);
-  setAiLoading(true);
+    const newMessages = [...messages, { role: "user", content: userMsg }];
+    setMessages(newMessages);
+    setAiLoading(true);
 
-  try {
-    const response = await axios.post(
-      "http://localhost:8000/api/resume/chat/",
-      {
-        message: userMsg,
-        context: systemPrompt
-      },
-      { withCredentials: true }
-    );
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/resume/chat/",
+        {
+          message: userMsg,
+          context: systemPrompt
+        },
+        { withCredentials: true }
+      );
 
-    const reply = response.data.reply;
+      const reply = response.data.reply;
 
-    setMessages(prev => [
-      ...prev,
-      { role: "assistant", content: reply }
-    ]);
+      setMessages(prev => [
+        ...prev,
+        { role: "assistant", content: reply }
+      ]);
 
-  } catch (err) {
-    console.log(err);
-    setMessages(prev => [
-      ...prev,
-      { role: "assistant", content: "Error connecting to AI." }
-    ]);
-  } finally {
-    setAiLoading(false);
-  }
-};
+    } catch (err) {
+      console.log(err);
+      setMessages(prev => [
+        ...prev,
+        { role: "assistant", content: "Error connecting to AI." }
+      ]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
-const handleKeyDown = (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
-};
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col"
@@ -499,16 +499,16 @@ function ResultsSection({ result, sections, activeTab, setActiveTab }) {
   const failCount = sections.filter(s => s.status === "fail").length;
 
   const TABS = [
-    { key: "overview",        label: "Overview"         },
-    { key: "detailed",        label: "Detailed Results" },
-    { key: "recommendations", label: "Recommendations"  },
-    { key: "nextsteps",       label: "Next Steps"       },
+    { key: "overview", label: "Overview" },
+    { key: "detailed", label: "Detailed Results" },
+    { key: "recommendations", label: "Recommendations" },
+    { key: "nextsteps", label: "Next Steps" },
   ];
 
   return (
     <div className="space-y-5">
 
-      {/* SCORE HERO */}
+    
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-5 flex items-center justify-between">
           <div>
@@ -521,10 +521,10 @@ function ResultsSection({ result, sections, activeTab, setActiveTab }) {
                 value={score}
                 text={`${score}`}
                 styles={buildStyles({
-                  pathColor:  "#ffffff",
+                  pathColor: "#ffffff",
                   trailColor: "rgba(255,255,255,0.25)",
-                  textColor:  "#ffffff",
-                  textSize:   "26px",
+                  textColor: "#ffffff",
+                  textSize: "26px",
                 })}
               />
             </div>
@@ -538,9 +538,9 @@ function ResultsSection({ result, sections, activeTab, setActiveTab }) {
         </div>
 
         <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100">
-          <CheckStrip icon="✓" count={passCount} label="Passed"   color="text-green-600" bg="bg-green-50"  />
-          <CheckStrip icon="⚠" count={warnCount} label="Warnings" color="text-amber-600" bg="bg-amber-50"  />
-          <CheckStrip icon="✕" count={failCount} label="Issues"   color="text-red-600"   bg="bg-red-50"    />
+          <CheckStrip icon="✓" count={passCount} label="Passed" color="text-green-600" bg="bg-green-50" />
+          <CheckStrip icon="⚠" count={warnCount} label="Warnings" color="text-amber-600" bg="bg-amber-50" />
+          <CheckStrip icon="✕" count={failCount} label="Issues" color="text-red-600" bg="bg-red-50" />
         </div>
       </div>
 
@@ -551,21 +551,20 @@ function ResultsSection({ result, sections, activeTab, setActiveTab }) {
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
-              className={`px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 ${
-                activeTab === t.key
+              className={`px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 ${activeTab === t.key
                   ? "text-violet-700 border-violet-600 bg-violet-50/50"
                   : "text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50"
-              }`}
+                }`}
             >
               {t.label}
             </button>
           ))}
         </div>
         <div className="p-6">
-          {activeTab === "overview"        && <TabOverview        sections={sections} />}
-          {activeTab === "detailed"        && <TabDetailed        sections={sections} />}
-          {activeTab === "recommendations" && <TabRecommendations result={result}     />}
-          {activeTab === "nextsteps"       && <TabNextSteps       result={result}     />}
+          {activeTab === "overview" && <TabOverview sections={sections} />}
+          {activeTab === "detailed" && <TabDetailed sections={sections} />}
+          {activeTab === "recommendations" && <TabRecommendations result={result} />}
+          {activeTab === "nextsteps" && <TabNextSteps result={result} />}
         </div>
       </div>
 
@@ -642,7 +641,7 @@ function TabDetailed({ sections }) {
   return (
     <div className="space-y-3">
       {sections.map((s) => {
-        const st  = STATUS[s.status];
+        const st = STATUS[s.status];
         const open = expanded === s.key;
         return (
           <div key={s.key} className="rounded-xl border overflow-hidden hover:shadow-sm transition-shadow"
@@ -702,18 +701,18 @@ function TabDetailed({ sections }) {
 ───────────────────────────────────────────── */
 
 function TabRecommendations({ result }) {
-  const suggs  = result.suggestions || [];
-  const total  = suggs.length;
-  const high   = suggs.slice(0, Math.ceil(total * 0.4));
+  const suggs = result.suggestions || [];
+  const total = suggs.length;
+  const high = suggs.slice(0, Math.ceil(total * 0.4));
   const medium = suggs.slice(Math.ceil(total * 0.4), Math.ceil(total * 0.75));
-  const low    = suggs.slice(Math.ceil(total * 0.75));
+  const low = suggs.slice(Math.ceil(total * 0.75));
 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <RecColumn title="High Priority"   items={high}   dotColor="bg-red-500"   titleColor="text-red-700"   bg="bg-red-50"   border="border-red-200"   arrowColor="text-red-400"   />
+        <RecColumn title="High Priority" items={high} dotColor="bg-red-500" titleColor="text-red-700" bg="bg-red-50" border="border-red-200" arrowColor="text-red-400" />
         <RecColumn title="Medium Priority" items={medium} dotColor="bg-amber-400" titleColor="text-amber-700" bg="bg-amber-50" border="border-amber-200" arrowColor="text-amber-400" />
-        <RecColumn title="Low Priority"    items={low}    dotColor="bg-green-500" titleColor="text-green-700" bg="bg-green-50" border="border-green-200" arrowColor="text-green-500" />
+        <RecColumn title="Low Priority" items={low} dotColor="bg-green-500" titleColor="text-green-700" bg="bg-green-50" border="border-green-200" arrowColor="text-green-500" />
       </div>
       <div className="rounded-xl border border-slate-200 p-4">
         <div className="flex items-center gap-2 mb-3">

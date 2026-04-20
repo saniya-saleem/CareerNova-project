@@ -16,10 +16,6 @@ export default function GoogleLoginBtn() {
       );
 
       console.log(res.data);
-
-      localStorage.setItem("access", res.data.access);
-      localStorage.setItem("refresh", res.data.refresh);
-
       // redirect only
       navigate("/");
 

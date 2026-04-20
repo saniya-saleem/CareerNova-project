@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-@==y9810&*fp^aeg0y(e(nr4mr*bsntuk6(e=w296(vl7i%#hs'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
     "daphne",   
@@ -143,6 +143,15 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_THROTTLE_RATES": {
         "user": "100/day",
+        "auth_login": "5/min",
+        "auth_register": "3/min",
+        "auth_google": "5/min",
+        "auth_refresh": "10/min",
+        "auth_session": "20/min",
+
+        "session_read": "60/min",
+        "session_write": "20/min",
+        "session_admin": "100/min", 
     },
 }
 

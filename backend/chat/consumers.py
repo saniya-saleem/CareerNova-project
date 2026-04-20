@@ -71,11 +71,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
 class CallConsumer(AsyncWebsocketConsumer):
+    media_participants = {}
 
     async def connect(self):
         self.room_code  = self.scope["url_route"]["kwargs"]["room_code"]
         self.room_group = f"call_{self.room_code}"
         self.user       = self.scope["user"]
+        self.connection_type = "observer"
 
         await self.channel_layer.group_add(self.room_group, self.channel_name)
         await self.accept()
@@ -91,10 +93,20 @@ class CallConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group, self.channel_name)
+        if self.connection_type != "media":
+            print(f" CallConsumer DISCONNECTED â€” room: {self.room_code}")
+            return
+        participants = self.media_participants.get(self.room_code, set())
+        participants.discard(self.channel_name)
+        if participants:
+            self.media_participants[self.room_code] = participants
+        else:
+            self.media_participants.pop(self.room_code, None)
         await self.channel_layer.group_send(self.room_group, {
             "type":   "call_signal",
             "data":   {"type": "peer-left"},
-            "sender": self.channel_name
+            "sender": self.channel_name,
+            "target": "media",
         })
         print(f" CallConsumer DISCONNECTED — room: {self.room_code}")
 
@@ -104,7 +116,26 @@ class CallConsumer(AsyncWebsocketConsumer):
             signal_type = data.get("type")
             print(f"📡 Signal received: {signal_type} in room {self.room_code}")
 
-            if signal_type == "chat":
+            if signal_type == "chat-join":
+                self.connection_type = "chat"
+            elif signal_type == "join":
+                self.connection_type = "media"
+                participants = self.media_participants.setdefault(self.room_code, set())
+                participants.add(self.channel_name)
+                await self.channel_layer.group_send(self.room_group, {
+                    "type":   "call_signal",
+                    "data":   data,
+                    "sender": self.channel_name,
+                    "target": "media",
+                })
+                if len(participants) >= 2:
+                    await self.channel_layer.group_send(self.room_group, {
+                        "type": "call_signal",
+                        "data": {"type": "create-offer"},
+                        "sender": None,
+                        "target": "media",
+    })
+            elif signal_type == "chat":
                 
                 content = data.get("content", "")
                 await self.save_room_message(content)
@@ -116,14 +147,16 @@ class CallConsumer(AsyncWebsocketConsumer):
                         "sender":    self.user.username if self.user.is_authenticated else "Guest",
                         "timestamp": data.get("timestamp", ""),
                     },
-                    "sender": None  
+                    "sender": None,
+                    "target": "all",
                 })
             else:
                 
                 await self.channel_layer.group_send(self.room_group, {
                     "type":   "call_signal",
                     "data":   data,
-                    "sender": self.channel_name
+                    "sender": self.channel_name,
+                    "target": "media",
                 })
 
         except Exception as e:
@@ -131,7 +164,12 @@ class CallConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({"error": str(e)}))
 
     async def call_signal(self, event):
-      
+        target = event.get("target", "all")
+        if target == "media" and self.connection_type != "media":
+            return
+        if target == "chat" and self.connection_type != "chat":
+            return
+
         if event.get("sender") is None or event.get("sender") != self.channel_name:
             await self.send(text_data=json.dumps(event["data"]))
 

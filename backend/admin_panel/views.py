@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from authentication.models import User
 from profiles.models import Activity
 from analytics.models import InterviewResult
@@ -10,7 +10,14 @@ from datetime import timedelta
 
 
 def is_admin(user):
-    return user.is_authenticated and user.role == "admin"
+    return user.is_authenticated and (user.role == "admin" or user.is_superuser)
+
+
+class IsRoleAdmin(BasePermission):
+    message = "Unauthorized"
+
+    def has_permission(self, request, view):
+        return is_admin(request.user)
 
 
 class AdminStatsView(APIView):
@@ -115,9 +122,7 @@ class AdminInterviewsView(APIView):
         return Response(data)
     
 class AdminCheckView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ IsRoleAdmin]
 
     def get(self, request):
-        if request.user.role != "admin":
-            return Response({"error": "Unauthorized"}, status=403)
         return Response({"is_admin": True, "username": request.user.username})

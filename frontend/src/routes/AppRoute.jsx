@@ -9,6 +9,7 @@ import MockInterview from "../pages/MockInterview";
 import Chat from "../pages/Chat";
 import AdminPanel from "../pages/AdminPanel";
 import AdminRoute from "../components/AdminRoute";
+import ProtectedRoute from "../components/ProtectedRoute";
 import RoomPage from "../pages/RoomPage";
 
 export default function AppRoutes() {
@@ -17,15 +18,46 @@ export default function AppRoutes() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/profile" element={
-        localStorage.getItem("access")
-          ? <Profile />
-          : <Login />
-      } />
-      <Route path="/resume-upload" element={<ResumeUpload />} />
-      <Route path="/mock-interview" element={<MockInterview />} />
-      <Route path="/chat" element={<Chat />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/resume-upload"
+        element={
+          <ProtectedRoute>
+            <ResumeUpload />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mock-interview"
+        element={
+          <ProtectedRoute>
+            <MockInterview />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <Chat />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/admin-panel"
         element={
@@ -34,7 +66,14 @@ export default function AppRoutes() {
           </AdminRoute>
         }
       />
-      <Route path="/room" element={<RoomPage />} />
+      <Route
+        path="/room"
+        element={
+          <ProtectedRoute>
+            <RoomPage />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
